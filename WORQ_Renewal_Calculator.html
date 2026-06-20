@@ -295,27 +295,27 @@ body{font-family:'Inter',Helvetica,Arial,sans-serif;background:#EDE8DE;color:#1A
         <option value="SPM">Sunway Putra</option>
         <option value="ITG">Intermark (ITG)</option>
         <option value="SV2">Sunway Velocity</option>
-        <option value="BU">Bandar Utama</option>
+        <option value="8FA">Bandar Utama (8FA)</option>
         <option value="APT">Intermark (APT)</option>
         <option value="MSH">Menara Shell</option>
-        <option value="8FA">8FA</option>
       </select>
-      <label>Tier</label>
-      <select class="fsel" id="filterTier" onchange="renderDashboard()">
-        <option value="">All Tiers</option>
-        <option value="LONG_TERM_GROWTH">Long Term Growth</option>
-        <option value="LOYALTY">Loyalty</option>
-        <option value="SHORT_TERM_GROWTH">Short Term Growth</option>
-        <option value="NORMAL">Normal</option>
+      <label>Status</label>
+      <select class="fsel" id="filterStatus" onchange="renderDashboard()">
+        <option value="">All Status</option>
+        <option value="overdue">🔴 Overdue</option>
+        <option value="due_30">⚠️ Due ≤30d</option>
+        <option value="due_60">📅 Due ≤60d</option>
+        <option value="notice_overdue">🔔 Notice Overdue</option>
+        <option value="notice_due">🔔 Notice Due ≤14d</option>
+        <option value="renewed">✅ Renewed</option>
       </select>
-      <label>Flag</label>
-      <select class="fsel" id="filterFlag" onchange="renderDashboard()">
-        <option value="">All</option>
-        <option value="escalate">🚨 Escalate</option>
-        <option value="promo">⚠️ Promo Rate</option>
+      <label>Label</label>
+      <select class="fsel" id="filterLabel" onchange="renderDashboard()">
+        <option value="">All Labels</option>
         <option value="keyaccount">⭐ Key Account</option>
-        <option value="notice_overdue">🔴 Notice Overdue</option>
-        <option value="notice_due">🔔 Send Notice Soon</option>
+        <option value="gold">🏆 Gold Member</option>
+        <option value="promo">⚠️ Promo Rate</option>
+        <option value="escalate">🚨 Escalate</option>
       </select>
       <div class="fbar-stats" id="fbarStats"></div>
       <button class="btn-sec" style="padding:6px 12px;font-size:12px;margin-left:0" onclick="resetFilters()">✕ Reset</button>
@@ -603,15 +603,16 @@ body{font-family:'Inter',Helvetica,Arial,sans-serif;background:#EDE8DE;color:#1A
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 const RETAIL_RATES = {
   TTDI:770, UBP:800, KLG:800, KLS:970, MUB:800,
-  SPM:500, ITG:1170, SV2:800, BU:970, APT:1170, MSH:970,
-  '8FA':800,  // confirm retail rate with Chea — using 800 as placeholder
+  SPM:500, ITG:1170, SV2:800, APT:1170, MSH:970,
+  '8FA':970, // Bandar Utama — confirm retail rate with Chea
+  BU:970,    // legacy alias for Bandar Utama (8FA)
   STO:0
 };
 const OUTLET_NAMES = {
   TTDI:'TTDI', UBP:'Subang (UBP)', KLG:'KL Gateway', KLS:'KL Sentral',
   MUB:'Bangsar (MUB)', SPM:'Sunway Putra', ITG:'Intermark (ITG)',
-  SV2:'Sunway Velocity', BU:'Bandar Utama', APT:'Intermark (APT)',
-  MSH:'Menara Shell', '8FA':'8FA', STO:'STO'
+  SV2:'Sunway Velocity', APT:'Intermark (APT)',
+  MSH:'Menara Shell', '8FA':'Bandar Utama', BU:'Bandar Utama', STO:'STO'
 };
 const SST = 0.08;
 const KA_THRESHOLD = 15000;
@@ -914,7 +915,9 @@ function computeOffers(m, tier, goodPaymaster) {
 
 // ─── PROCESS DATA ─────────────────────────────────────────────────────────────
 function processRaw(rows) {
-  // Group by company — all plans stored; plan filter applied in renderDashboard
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // ── Step 1: Group by company, filter PS ──
   const byCompany = {};
   rows.forEach(m => {
     const key = (m.companyName || '').trim();
@@ -925,69 +928,141 @@ function processRaw(rows) {
 
   const companies = [];
   Object.entries(byCompany).forEach(([name, memberships]) => {
-    // PS-only: skip non-PS memberships entirely
-    const psMemberships = memberships.filter(m => {
+    const psMems = memberships.filter(m => {
       const plan = ((m.plan || '').trim().toUpperCase()) || 'PS';
       return plan === 'PS';
     });
-    if (!psMemberships.length) return;
+    if (!psMems.length) return;
 
-    const totalMRR = psMemberships.reduce((s, m) => s + (parseFloat(m.currentMRR) || 0), 0);
+    // ── Step 2: Parse dates & sort by outlet → room → startDate ──
+    const parsed = psMems.map(m => {
+      const sd = parseDate(m.startDate);
+      const ed = parseDate(m.endDate);
+      return { ...m, startDateParsed: sd, endDateParsed: ed };
+    });
+    parsed.sort((a, b) => {
+      const oc = (a.outletCode || '').localeCompare(b.outletCode || '');
+      if (oc !== 0) return oc;
+      const rc = (a.roomName || '').localeCompare(b.roomName || '');
+      if (rc !== 0) return rc;
+      return (a.startDateParsed || 0) - (b.startDateParsed || 0);
+    });
+
+    // ── Step 3: Phase detection per suite (per company) ──
+    // For each outlet+room, classify contracts as past / current / future
+    const bySuite = {};
+    parsed.forEach(m => {
+      const key = m.roomName && m.outletCode
+        ? `${m.outletCode}|${m.roomName.trim().toLowerCase()}`
+        : `__noroom_${m.outletCode || ''}_${m.startDate || ''}`;
+      if (!bySuite[key]) bySuite[key] = [];
+      bySuite[key].push(m);
+    });
+
+    Object.values(bySuite).forEach(suiteContracts => {
+      // Already sorted by startDate from the sort above
+      suiteContracts.forEach((m, idx) => {
+        const next = suiteContracts[idx + 1];
+        const startIsAfterToday = m.startDateParsed && m.startDateParsed > today;
+        const endBeforeToday   = m.endDateParsed   && m.endDateParsed   < today;
+
+        if (startIsAfterToday) {
+          // Contract hasn't started yet — it's the renewed/future contract
+          m.contractPhase = 'future';
+          m.isRenewed = false;
+          m.isPast = false;
+        } else if (endBeforeToday) {
+          // Contract already ended
+          const nextStartsFuture = next && next.startDateParsed && next.startDateParsed > today;
+          const nextStartsAfterEnd = next && next.startDateParsed && m.endDateParsed && next.startDateParsed >= m.endDateParsed;
+          if (next && (nextStartsFuture || nextStartsAfterEnd)) {
+            m.contractPhase = 'past_renewed'; // was renewed by same company
+            m.isRenewed = true;
+          } else {
+            m.contractPhase = 'past';          // expired, not renewed
+            m.isRenewed = false;
+            m.isPast = true;
+          }
+        } else {
+          // Active today — current contract
+          m.contractPhase = 'current';
+          // Renewed if the NEXT contract for this suite starts on/after this one ends
+          const hasNextFuture = next && next.startDateParsed &&
+            m.endDateParsed && next.startDateParsed >= m.endDateParsed && next.startDateParsed > today;
+          m.isRenewed = !!hasNextFuture;
+          m.isPast = false;
+        }
+        if (m.isRenewed) m.notice = null;
+      });
+    });
+
+    // ── Step 4: Compute tier / offers only for non-past, non-future contracts ──
+    const totalMRR = parsed
+      .filter(m => m.contractPhase === 'current')
+      .reduce((s, m) => s + (parseFloat(m.currentMRR) || 0), 0);
     const isKA = totalMRR >= KA_THRESHOLD;
 
-    // Find soonest renewal
-    let soonestDays = Infinity;
-    psMemberships.forEach(m => {
-      const d = parseDate(m.endDate);
-      if (d) { const n = daysUntil(d); if (n < soonestDays) soonestDays = n; }
+    const processed = parsed
+      .filter(m => m.contractPhase !== 'past' && m.contractPhase !== 'past_renewed' && m.contractPhase !== 'future')
+      .map(m => {
+        const tier = detectTier(m);
+        const gp = isGoodPaymaster(m);
+        const promo = !m._missingRate ? isPromo(m) : false;
+        const offers = (!m._missingRate && !m.isRenewed) ? computeOffers(m, tier, gp) : null;
+        const worqPts = computeWorqPoints(m, tier, isKA);
+        const days = m.endDateParsed ? daysUntil(m.endDateParsed) : 9999;
+        const notice = (!m.isRenewed) ? computeNoticePeriod(m) : null;
+        return { ...m, plan: 'PS', tier, gp, promo, offers, worqPts, isKA, daysUntil: days, notice };
+      });
+
+    if (!processed.length) return; // all historical, skip company
+
+    // ── Step 5: Merge memberships with same tenure (same outlet + start + end) ──
+    // Only merge 'current' contracts — they share the same negotiation
+    const mergeGroups = {};
+    processed.forEach(m => {
+      const sk = m.startDateParsed ? m.startDateParsed.toISOString().slice(0,10) : (m.startDate || '');
+      const ek = m.endDateParsed   ? m.endDateParsed.toISOString().slice(0,10)   : (m.endDate || '');
+      const key = `${m.outletCode}|${sk}|${ek}`;
+      if (!mergeGroups[key]) mergeGroups[key] = [];
+      mergeGroups[key].push(m);
     });
 
-    // Process each PS membership
-    const processed = psMemberships.map(m => {
-      const tier = detectTier(m);
-      const gp = isGoodPaymaster(m);
-      const promo = !m._missingRate ? isPromo(m) : false;
-      const offers = !m._missingRate ? computeOffers(m, tier, gp) : null;
-      const worqPts = computeWorqPoints(m, tier, isKA);
-      const d = parseDate(m.endDate);
-      const days = d ? daysUntil(d) : 9999;
-      const notice = computeNoticePeriod(m);
-      return { ...m, plan: 'PS', tier, gp, promo, offers, worqPts, isKA, endDateParsed: d, daysUntil: days, notice };
+    const TIER_RANK = {LONG_TERM_GROWTH:0, LOYALTY:1, SHORT_TERM_GROWTH:2, NORMAL:3};
+    const merged = Object.values(mergeGroups).map(group => {
+      if (group.length === 1) return group[0];
+      // Combine: sum numeric fields, join room names
+      const base = { ...group[0] };
+      base._mergedRooms = group.map(m => m.roomName).filter(Boolean);
+      base.roomName = base._mergedRooms.join(' + ');
+      base.pax = String(group.reduce((s, m) => s + (parseInt(m.pax) || 0), 0));
+      base.monthlyRateExSST = String(group.reduce((s, m) => s + (parseFloat(m.monthlyRateExSST) || 0), 0));
+      base.currentMRR = String(group.reduce((s, m) => s + (parseFloat(m.currentMRR) || 0), 0));
+      base.depositHeld = String(group.reduce((s, m) => s + (parseFloat(m.depositHeld) || 0), 0));
+      base._merged = true;
+      base._mergedCount = group.length;
+      // Best tier across merged memberships
+      base.tier = group.map(m => m.tier).sort((a, b) => TIER_RANK[a] - TIER_RANK[b])[0];
+      // Recompute offers using combined pax/rate
+      if (!base._missingRate && !base.isRenewed) {
+        base.gp = isGoodPaymaster(base);
+        base.promo = isPromo(base);
+        base.offers = computeOffers(base, base.tier, base.gp);
+        base.worqPts = computeWorqPoints(base, base.tier, isKA);
+      }
+      return base;
     });
 
-    companies.push({ name, memberships: processed, totalMRR, isKA, soonestDays });
-  });
-
-  // ── Second pass: detect suites that already have a future contract (already renewed) ──
-  // Build map: "OUTLET|room" → all contract start dates across all companies
-  const today = new Date(); today.setHours(0,0,0,0);
-  const roomStarts = {};
-  companies.forEach(c => c.memberships.forEach(m => {
-    if (!m.roomName || !m.outletCode) return;
-    const key = `${m.outletCode}|${m.roomName.trim().toLowerCase()}`;
-    const start = parseDate(m.startDate);
-    if (!roomStarts[key]) roomStarts[key] = [];
-    if (start) roomStarts[key].push(start);
-  }));
-
-  companies.forEach(c => {
-    c.memberships.forEach(m => {
-      if (!m.roomName || !m.outletCode || !m.endDateParsed) { m.isRenewed = false; return; }
-      const key = `${m.outletCode}|${m.roomName.trim().toLowerCase()}`;
-      const starts = roomStarts[key] || [];
-      // A future contract exists if any start date is >= this contract's end date AND still in the future
-      m.isRenewed = starts.some(s => s >= m.endDateParsed && s > today);
-      // Suppress notice logic for renewed memberships
-      if (m.isRenewed) m.notice = null;
-    });
-    // Recalculate soonestDays using non-renewed memberships only
-    const actionable = c.memberships.filter(m => !m.isRenewed);
-    c.soonestDays = actionable.length
+    // ── Step 6: Final soonestDays from actionable (current, not renewed) ──
+    const actionable = merged.filter(m => !m.isRenewed);
+    const soonestDays = actionable.length
       ? Math.min(...actionable.map(m => m.daysUntil))
-      : c.memberships[0]?.daysUntil ?? 9999;
+      : merged[0]?.daysUntil ?? 9999;
+
+    companies.push({ name, memberships: merged, totalMRR, isKA, soonestDays });
   });
 
-  // Sort by soonest renewal
+  // Sort companies by soonest actionable renewal
   companies.sort((a, b) => a.soonestDays - b.soonestDays);
   return companies;
 }
@@ -1314,7 +1389,8 @@ function resetFilters() {
   document.getElementById('filterWindow').value = '90';
   document.getElementById('filterOutlet').value = '';
   document.getElementById('filterTier').value = '';
-  document.getElementById('filterFlag').value = '';
+  document.getElementById('filterStatus').value = '';
+  document.getElementById('filterLabel').value = '';
   renewalWindowDays = 90;
   renderDashboard();
 }
@@ -1413,13 +1489,18 @@ function copyCardSummary(name, event) {
 function renderDashboard() {
   const filterSearch = (document.getElementById('filterSearch').value || '').trim().toLowerCase();
   const filterOutlet = document.getElementById('filterOutlet').value;
-  const filterTier   = document.getElementById('filterTier').value;
-  const filterFlag   = document.getElementById('filterFlag').value;
+  const filterTier   = document.getElementById('filterTier') ? document.getElementById('filterTier').value : '';
+  const filterStatus = document.getElementById('filterStatus').value;
+  const filterLabel  = document.getElementById('filterLabel').value;
 
   // Step 1: window filter — at least one PS membership ending within window
-  let companies = allCompanies.filter(c =>
-    c.memberships.some(m => m.daysUntil <= renewalWindowDays)
-  );
+  // 'renewed' status shows companies where ALL memberships are renewed (no actionable)
+  let companies = allCompanies.filter(c => {
+    if (filterStatus === 'renewed') {
+      return c.memberships.some(m => m.isRenewed);
+    }
+    return c.memberships.some(m => m.daysUntil <= renewalWindowDays);
+  });
 
   // Step 1b: company name search
   if (filterSearch) {
@@ -1429,16 +1510,39 @@ function renderDashboard() {
   // Step 2: membership-level filters
   companies = companies.map(c => {
     const mems = c.memberships.filter(m => {
-      if (m.daysUntil > renewalWindowDays) return false;
-      if (filterOutlet && m.outletCode !== filterOutlet) return false;
-      if (filterTier && m.tier !== filterTier) return false;
-      if (filterFlag) {
-        if (filterFlag === 'escalate' && (m.isRenewed || !(m.promo || m.isKA))) return false;
-        if (filterFlag === 'promo' && !m.promo) return false;
-        if (filterFlag === 'keyaccount' && !m.isKA) return false;
-        if (filterFlag === 'notice_overdue' && !(m.notice && m.notice.daysToNotice <= 0)) return false;
-        if (filterFlag === 'notice_due' && !(m.notice && m.notice.daysToNotice > 0 && m.notice.daysToNotice <= 14)) return false;
+      // Status filter
+      if (filterStatus) {
+        if (filterStatus === 'renewed') {
+          if (!m.isRenewed) return false;
+        } else {
+          // Status filters only apply to actionable (non-renewed) memberships
+          if (m.isRenewed) return false;
+          if (m.daysUntil > renewalWindowDays) return false;
+          if (filterStatus === 'overdue'      && m.daysUntil > 0) return false;
+          if (filterStatus === 'due_30'       && (m.daysUntil <= 0 || m.daysUntil > 30)) return false;
+          if (filterStatus === 'due_60'       && (m.daysUntil <= 0 || m.daysUntil > 60)) return false;
+          if (filterStatus === 'notice_overdue' && !(m.notice && m.notice.daysToNotice <= 0)) return false;
+          if (filterStatus === 'notice_due'   && !(m.notice && m.notice.daysToNotice > 0 && m.notice.daysToNotice <= 14)) return false;
+        }
+      } else {
+        // No status filter — apply window filter, include renewed too
+        if (!m.isRenewed && m.daysUntil > renewalWindowDays) return false;
       }
+
+      // Outlet filter
+      if (filterOutlet && m.outletCode !== filterOutlet) return false;
+
+      // Tier filter
+      if (filterTier && m.tier !== filterTier) return false;
+
+      // Label filter (segment tags — independent of status)
+      if (filterLabel) {
+        if (filterLabel === 'keyaccount' && !m.isKA) return false;
+        if (filterLabel === 'gold'       && !(m.isKA)) return false;  // placeholder: gold = KA for now
+        if (filterLabel === 'promo'      && !m.promo) return false;
+        if (filterLabel === 'escalate'   && (!m.promo && !m.isKA)) return false;
+      }
+
       return true;
     });
     return mems.length ? { ...c, memberships: mems } : null;
