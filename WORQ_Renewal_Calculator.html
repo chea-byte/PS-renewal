@@ -1,0 +1,2215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WORQ — Private Suite Renewal Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',Helvetica,Arial,sans-serif;background:#EDE8DE;color:#1A2B4A;min-height:100vh}
+:root{
+  --primary:#1A2B4A;--accent:#FF8A00;--accent-l:#FFF5E6;
+  --cream:#F5EEDB;--cream-d:#EDE4CC;
+  --ok:#0F9D58;--ok-l:#E6F4EA;--warn:#F59E0B;--warn-l:#FFFBEB;
+  --danger:#DC2626;--danger-l:#FEF2F2;--info:#2563EB;--info-l:#EFF6FF;
+  --g50:#FAFAF8;--g100:#F5EEDB;--g200:#EDE4CC;--g300:#D8CFBA;
+  --g500:#999999;--g700:#666666;--g900:#1A2B4A;
+  --shadow:0 1px 3px rgba(0,0,0,.10),0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg:0 8px 24px rgba(0,0,0,.13);--r:12px;--r-sm:8px
+}
+
+/* HEADER */
+.hdr{background:#fff;color:var(--primary);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.08);border-bottom:3px solid var(--accent)}
+.hdr-logo{display:flex;align-items:center;gap:14px}
+.hdr-logo img{height:32px;width:auto;display:block}
+.hdr-logo-divider{width:1px;height:24px;background:var(--g300)}
+.hdr-logo-sub{font-size:13px;font-weight:500;color:var(--g500);letter-spacing:.2px}
+.hdr-right{display:flex;align-items:center;gap:16px}
+.hdr-meta{font-size:12px;color:var(--g500)}
+.btn-settings{padding:6px 14px;background:var(--g100);border:1px solid var(--g300);color:var(--primary);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-settings:hover{background:var(--g200)}
+
+/* TABS */
+.tabs{background:#fff;border-bottom:1px solid var(--g200);padding:0 24px;display:flex}
+.tab{padding:14px 20px;border:none;background:none;font-size:14px;font-weight:500;color:var(--g700);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover:not(.active){color:var(--g900);background:var(--g50)}
+
+/* MAIN */
+.main{padding:24px;max-width:1400px;margin:0 auto}
+.panel{display:none}.panel.active{display:block}
+
+/* FILTER BAR */
+.fbar{background:#fff;border-radius:var(--r);padding:14px 20px;margin-bottom:20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;box-shadow:var(--shadow)}
+.fbar label{font-size:13px;color:var(--g700);font-weight:500}
+.fsel{padding:6px 12px;border:1px solid var(--g300);border-radius:6px;font-size:13px;color:var(--g900);background:#fff;cursor:pointer}
+.fsel:focus{outline:none;border-color:var(--accent)}
+.fbar-stats{margin-left:auto;display:flex;gap:10px}
+.stat-chip{font-size:12px;color:var(--g700);background:var(--g100);padding:3px 10px;border-radius:20px;font-weight:500}
+.stat-chip.red{background:var(--danger-l);color:var(--danger)}
+.stat-chip.amber{background:var(--warn-l);color:#92400E}
+.btn-load{padding:8px 18px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.1px}
+.btn-load:hover{background:#E07800}
+
+/* CARDS GRID */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+
+/* COMPANY CARD */
+.ccard{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:box-shadow .15s,transform .15s;border:1px solid var(--g200);border-left:4px solid transparent;font-family:'Inter',Helvetica,Arial,sans-serif;position:relative}
+.ccard:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+.ccard.c-ok{border-left-color:var(--g300)}
+.ccard.c-warn{border-left-color:var(--warn)}
+.ccard.c-danger{border-left-color:var(--danger)}
+.ccard.c-escalate{border-left-color:var(--danger)}
+.ccard.c-overdue{border-left-color:#7C3AED;background:linear-gradient(135deg,#FAF5FF 0%,#fff 60%)}
+
+.ch{padding:16px 18px 10px;border-bottom:1px solid var(--cream-d)}
+.ch-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.ch-name{font-size:15px;font-weight:700;color:var(--primary);flex:1;padding-right:8px}
+.ch-tier{flex-shrink:0}
+.ch-meta{font-size:12px;color:var(--g500);display:flex;gap:10px;flex-wrap:wrap}
+
+.cb{padding:10px 18px}
+.crow{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.crow:last-child{margin-bottom:0}
+.crow-lbl{font-size:12px;color:var(--g500)}
+.crow-val{font-size:13px;font-weight:600;color:var(--g900)}
+.crow-val.green{color:var(--ok)}
+.crow-val.amber{color:#D97706}
+.crow-val.red{color:var(--danger)}
+
+.cbadges{padding:8px 18px 14px;display:flex;gap:5px;flex-wrap:wrap}
+
+/* BADGES */
+.bdg{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.bdg-gold{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+.bdg-growth{background:var(--ok-l);color:#065F46;border:1px solid #6EE7B7}
+.bdg-ka{background:var(--info-l);color:#1E40AF;border:1px solid #BFDBFE}
+.bdg-gp{background:var(--ok-l);color:#064E3B;border:1px solid #6EE7B7}
+.bdg-bp{background:var(--danger-l);color:#991B1B;border:1px solid #FECACA}
+.bdg-promo{background:var(--warn-l);color:#92400E;border:1px solid #FDE68A}
+.bdg-esc{background:var(--danger-l);color:#B91C1C;border:1px solid #FCA5A5}
+.bdg-notice{background:var(--warn-l);color:#92400E;border:1px solid #FDE68A}
+.bdg-overdue{background:var(--danger-l);color:#B91C1C;border:1px solid #FCA5A5}
+.bdg-na{background:var(--g100);color:var(--g500);border:1px solid var(--g300)}
+.bdg-renewed{background:#DCFCE7;color:#14532D;border:1px solid #86EFAC}
+.bdg-occ-high{background:var(--danger-l);color:var(--danger);border:1px solid #FECACA}
+.bdg-occ-low{background:var(--warn-l);color:#92400E;border:1px solid #FDE68A}
+.bdg-occ-std{background:var(--ok-l);color:#065F46;border:1px solid #6EE7B7}
+
+/* COPY CARD BUTTON */
+.btn-card-copy{position:absolute;bottom:10px;right:12px;padding:3px 10px;font-size:11px;font-weight:600;border:1px solid var(--g300);border-radius:5px;background:#fff;color:var(--g700);cursor:pointer;opacity:0;transition:opacity .15s;z-index:2}
+.ccard:hover .btn-card-copy{opacity:1}
+.btn-card-copy:hover{background:var(--g100);border-color:var(--g500)}
+.btn-card-copy.ok{background:#DCFCE7;border-color:#86EFAC;color:#14532D}
+
+/* TIER TAG */
+.tier{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px}
+.tier-ltg{background:var(--primary);color:#FF8A00}
+.tier-loy{background:#FF8A00;color:#fff}
+.tier-stg{background:var(--primary);color:#fff}
+.tier-nor{background:var(--g500);color:#fff}
+
+/* EMPTY */
+.empty{text-align:center;padding:80px 40px;color:var(--g500)}
+.empty h3{font-size:18px;color:var(--g700);margin-bottom:8px}
+.empty p{font-size:14px;line-height:1.7;max-width:400px;margin:0 auto}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;overflow-y:auto;padding:20px}
+.overlay.open{display:flex;align-items:flex-start;justify-content:center}
+.modal{background:#fff;border-radius:var(--r);width:100%;max-width:920px;box-shadow:0 20px 60px rgba(0,0,0,.3);margin:auto}
+.mhdr{padding:20px 24px 16px;border-bottom:1px solid var(--g200);display:flex;justify-content:space-between;align-items:flex-start}
+.mtitle{font-size:19px;font-weight:700;color:var(--primary)}
+.msub{font-size:13px;color:var(--g500);margin-top:2px}
+.mclose{width:30px;height:30px;border:none;background:var(--g100);border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--g700);flex-shrink:0}
+.mclose:hover{background:var(--g200)}
+.mbody{padding:20px 24px}
+.mftr{padding:14px 24px;border-top:1px solid var(--g200);display:flex;gap:10px;justify-content:flex-end}
+
+/* MEMBERSHIP TABS */
+.mem-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.mem-tab{padding:6px 14px;border:1px solid var(--g300);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:var(--g700);transition:all .15s}
+.mem-tab.active{border-color:var(--accent);background:var(--accent-l);color:var(--accent)}
+.mem-panel{display:none}.mem-panel.active{display:block}
+
+/* NOTICE BANNER */
+.notice{padding:10px 14px;border-radius:6px;font-size:13px;margin-bottom:14px;display:flex;gap:8px;align-items:center}
+.notice.info{background:var(--info-l);color:var(--info);border-left:3px solid var(--info)}
+.notice.warn{background:var(--warn-l);color:#92400E;border-left:3px solid var(--warn)}
+.notice.danger{background:var(--danger-l);color:var(--danger);border-left:3px solid var(--danger)}
+
+/* CONTRACT SUMMARY */
+.csummary{background:var(--cream);border-radius:var(--r-sm);padding:14px 16px;margin-bottom:18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;border:1px solid var(--cream-d)}
+.cs-item label{font-size:11px;color:var(--g500);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:3px;font-weight:500}
+.cs-item .cv{font-size:14px;font-weight:600;color:var(--g900)}
+.cs-item .cv.accent{color:var(--accent)}
+
+/* MISSING DATA */
+.missing-box{background:var(--warn-l);border:1px solid #FDE68A;border-radius:var(--r-sm);padding:14px 16px;margin-bottom:16px}
+.missing-box h4{font-size:13px;font-weight:700;color:#92400E;margin-bottom:10px}
+.mfields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mf label{font-size:12px;font-weight:600;color:var(--g700);display:block;margin-bottom:4px}
+.mf input,.mf select{width:100%;padding:7px 10px;border:1px solid var(--g300);border-radius:6px;font-size:13px}
+.mf input:focus,.mf select:focus{outline:none;border-color:var(--accent)}
+
+/* OFFERS */
+.offers-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.offers-grid.solo{grid-template-columns:1fr}
+.ocard{border:2px solid var(--g200);border-radius:var(--r-sm);overflow:hidden}
+.ocard.rec{border-color:var(--accent)}
+.ohead{padding:11px 15px;background:var(--cream);display:flex;justify-content:space-between;align-items:center}
+.ocard.rec .ohead{background:var(--accent-l)}
+.otitle{font-size:13px;font-weight:700;color:var(--g900)}
+.orec-badge{font-size:10px;font-weight:700;background:var(--accent);color:#fff;padding:2px 8px;border-radius:20px}
+.obody{padding:14px 15px}
+.orow{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+.orow:last-child{margin-bottom:0}
+.orow label{font-size:12px;color:var(--g500)}
+.oamt{font-size:14px;font-weight:700;color:var(--g900)}
+.oamt.big{font-size:16px;color:var(--accent)}
+.oamt.sub{font-size:12px;color:var(--g500);font-weight:400}
+.odiv{border:none;border-top:1px solid var(--g200);margin:10px 0}
+.free-tag{display:inline-flex;align-items:center;gap:4px;background:var(--ok-l);color:#065F46;font-size:12px;font-weight:600;padding:3px 9px;border-radius:20px;margin-bottom:9px}
+.pct-change{font-size:11px;font-weight:600;margin-left:5px}
+.pct-up{color:var(--ok)}.pct-down{color:var(--danger)}
+
+/* PROMO NOTICE */
+.promo-notice{background:var(--warn-l);border:1px solid #FDE68A;border-radius:6px;padding:10px 12px;font-size:12px;color:#92400E;margin-bottom:12px;display:flex;gap:6px}
+
+/* PERKS */
+.perks-box{background:var(--accent-l);border:1px solid #FFD080;border-radius:var(--r-sm);padding:13px 15px;margin-bottom:18px}
+.perks-title{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}
+.perks-list{display:flex;flex-wrap:wrap;gap:5px}
+.perk{font-size:12px;background:#fff;border:1px solid #FFD080;color:var(--primary);padding:3px 10px;border-radius:20px;font-weight:500}
+
+/* BOTTOM GRID */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.ibox{border:1px solid var(--g200);border-radius:var(--r-sm);padding:13px 15px}
+.ibox-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);margin-bottom:10px}
+.irow{display:flex;justify-content:space-between;margin-bottom:7px;font-size:13px}
+.irow:last-child{margin-bottom:0}
+.irow label{color:var(--g500)}
+.irow span{font-weight:600;color:var(--g900)}
+.irow span.accent{color:var(--accent)}
+.irow span.green{color:var(--ok)}
+.irow span.amber{color:#D97706}
+
+/* EMAIL */
+.esec-title{font-size:13px;font-weight:700;color:var(--g700);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.ebtns{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap}
+.ebtn{padding:5px 13px;border:1px solid var(--g300);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:var(--g700)}
+.ebtn.active{border-color:var(--accent);background:var(--accent);color:#fff}
+.eprev{border:1px solid var(--g200);border-radius:var(--r-sm);background:var(--g50);padding:14px;font-size:13px;line-height:1.75;color:var(--g900);white-space:pre-wrap;max-height:280px;overflow-y:auto;font-family:inherit}
+.btn-copy{padding:7px 18px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px}
+.btn-copy:hover{background:#E07800}
+.btn-copy.ok{background:var(--ok)}
+
+/* SETTINGS */
+.scard{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:24px;margin-bottom:20px;max-width:680px;border:1px solid var(--cream-d)}
+.scard h3{font-size:15px;font-weight:700;color:var(--primary);margin-bottom:4px}
+.scard p{font-size:13px;color:var(--g500);margin-bottom:18px;line-height:1.6}
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:13px;font-weight:600;color:var(--g700);margin-bottom:5px}
+.fg input,.fg select,.fg textarea{width:100%;padding:9px 12px;border:1px solid var(--g300);border-radius:6px;font-size:14px;color:var(--g900)}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent)}
+.fg .hint{font-size:11px;color:var(--g500);margin-top:4px}
+.btn-pri{padding:9px 22px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.1px}
+.btn-pri:hover{background:#E07800}
+.btn-sec{padding:9px 18px;background:#fff;color:var(--g700);border:1px solid var(--g300);border-radius:6px;font-size:14px;font-weight:500;cursor:pointer;margin-left:8px}
+
+/* PDF UPLOAD */
+.pdf-area{border:2px dashed var(--g300);border-radius:var(--r-sm);padding:36px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.pdf-area:hover{border-color:var(--accent);background:var(--accent-l)}
+.pdf-area .ico{font-size:32px;margin-bottom:8px}
+.pdf-area p{font-size:14px;color:var(--g500)}
+.pdf-area .hint{font-size:12px;color:var(--g500);margin-top:4px}
+#pdfInput{display:none}
+
+/* LOADING */
+.loader{display:none;position:fixed;inset:0;background:rgba(255,255,255,.8);z-index:2000;align-items:center;justify-content:center;flex-direction:column;gap:10px}
+.loader.show{display:flex}
+.spinner{width:36px;height:36px;border:3px solid var(--g200);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-txt{font-size:14px;color:var(--g700)}
+
+/* RESPONSIVE */
+@media(max-width:640px){
+  .offers-grid,.bottom-grid,.mfields,.csummary{grid-template-columns:1fr}
+  .grid{grid-template-columns:1fr}
+  .main{padding:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-logo">
+    <img src="./WORQ_Logo_Colour.jpg" alt="WORQ" onerror="this.style.display='none';this.nextSibling.style.display='block'">
+    <span style="display:none;font-size:20px;font-weight:800;color:#FF8A00;letter-spacing:-.5px">WORQ</span>
+    <div class="hdr-logo-divider"></div>
+    <span class="hdr-logo-sub">Renewal Pricing Calculator</span>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-meta" id="lastUpdated"></span>
+    <a href="https://docs.google.com/spreadsheets/d/1yEfpsAl_bYynP7-Fh7ux7v9A6t4RbIMk92d7-oiL-Oo/edit" target="_blank" style="padding:6px 14px;background:var(--ok-l);border:1px solid #6EE7B7;color:#065F46;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:5px">📊 Renewal Sheet ↗</a>
+    <button class="btn-settings" onclick="switchTab('settings')">⚙ Settings</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" id="tab-dashboard" onclick="switchTab('dashboard')">Dashboard</button>
+  <button class="tab" id="tab-guide" onclick="switchTab('guide')">How to Use</button>
+  <button class="tab" id="tab-settings" onclick="switchTab('settings')">Settings</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- DASHBOARD PANEL -->
+  <div class="panel active" id="panel-dashboard">
+    <div class="fbar">
+      <input type="text" id="filterSearch" class="fsel" placeholder="🔍 Search company…" oninput="renderDashboard()" style="min-width:160px">
+      <label>Window</label>
+      <select class="fsel" id="filterWindow" onchange="applyWindowFilter()">
+        <option value="30">30 days</option>
+        <option value="60">60 days</option>
+        <option value="90" selected>90 days</option>
+        <option value="180">180 days</option>
+        <option value="365">12 months</option>
+        <option value="9999">All Active</option>
+      </select>
+      <label>Outlet</label>
+      <select class="fsel" id="filterOutlet" onchange="renderDashboard()">
+        <option value="">All Outlets</option>
+        <option value="TTDI">TTDI</option>
+        <option value="UBP">Subang (UBP)</option>
+        <option value="KLG">KL Gateway</option>
+        <option value="KLS">KL Sentral</option>
+        <option value="MUB">Bangsar (MUB)</option>
+        <option value="SPM">Sunway Putra</option>
+        <option value="ITG">Intermark (ITG)</option>
+        <option value="SV2">Sunway Velocity</option>
+        <option value="BU">Bandar Utama</option>
+        <option value="APT">Intermark (APT)</option>
+        <option value="MSH">Menara Shell</option>
+        <option value="8FA">8FA</option>
+      </select>
+      <label>Tier</label>
+      <select class="fsel" id="filterTier" onchange="renderDashboard()">
+        <option value="">All Tiers</option>
+        <option value="LONG_TERM_GROWTH">Long Term Growth</option>
+        <option value="LOYALTY">Loyalty</option>
+        <option value="SHORT_TERM_GROWTH">Short Term Growth</option>
+        <option value="NORMAL">Normal</option>
+      </select>
+      <label>Flag</label>
+      <select class="fsel" id="filterFlag" onchange="renderDashboard()">
+        <option value="">All</option>
+        <option value="escalate">🚨 Escalate</option>
+        <option value="promo">⚠️ Promo Rate</option>
+        <option value="keyaccount">⭐ Key Account</option>
+        <option value="notice_overdue">🔴 Notice Overdue</option>
+        <option value="notice_due">🔔 Send Notice Soon</option>
+      </select>
+      <div class="fbar-stats" id="fbarStats"></div>
+      <button class="btn-sec" style="padding:6px 12px;font-size:12px;margin-left:0" onclick="resetFilters()">✕ Reset</button>
+      <button class="btn-load" onclick="reloadData()">↻ Refresh</button>
+    </div>
+    <div class="grid" id="cardsGrid">
+      <div class="empty">
+        <div style="font-size:48px;margin-bottom:12px">📋</div>
+        <h3>No data loaded</h3>
+        <p>Go to Settings to connect your Google Sheet, or load sample data to explore the tool.</p>
+        <button class="btn-pri" style="margin-top:16px" onclick="loadSampleData()">Load Sample Data</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div class="panel" id="panel-settings">
+    <div style="background:var(--accent-l);border:1px solid #FFD080;border-radius:var(--r);padding:12px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;max-width:680px">
+      <span style="font-size:13px;color:#92400E">New to the tool? Read the workflow guide first.</span>
+      <button onclick="switchTab('guide')" style="padding:6px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">How to Use →</button>
+    </div>
+    <div class="scard" style="border-top:3px solid var(--accent)">
+      <h3>📥 How to export from OfficeRND</h3>
+      <p style="margin-bottom:14px">Do this once a week before your renewal review. Takes under 2 minutes.</p>
+      <ol style="font-size:13px;color:var(--g700);line-height:2;margin:0 0 0 18px">
+        <li>Log in to OfficeRND → go to <strong>Reports</strong> in the left menu</li>
+        <li>Select <strong>Memberships</strong> report</li>
+        <li>Set filter: <strong>Plan = Private Suite (PS)</strong> · Status = <strong>Active</strong></li>
+        <li>Click <strong>Export → CSV</strong> (top right)</li>
+        <li>Open the downloaded CSV in any text editor (Notepad, TextEdit)</li>
+        <li>Select all (Ctrl+A) → Copy (Ctrl+C)</li>
+        <li>Come back here → click <strong>Paste CSV instead →</strong> below → paste → Load</li>
+      </ol>
+      <div style="margin-top:12px;padding:10px 14px;background:var(--g50);border-radius:8px;font-size:12px;color:var(--g700)">
+        <strong>Required columns in the export:</strong> company_name · outlet_code · room_name · current_pax_count · membership_start_date · membership_end_date · current_monthly_rate · deposit_held · plan
+      </div>
+    </div>
+    <div class="scard">
+      <h3>📊 Google Sheet Connection</h3>
+      <p>Paste a Google Sheets URL that is shared as <strong>"Anyone with the link can view"</strong>. If the sheet is only shared with specific Google accounts, the tool cannot load it (no login capability) — use <strong>Paste CSV instead</strong> in that case.</p>
+      <div class="fg">
+        <label>Google Sheet URL</label>
+        <input type="text" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/…/edit?gid=…" style="font-size:13px">
+        <div class="hint">Paste the URL from your browser's address bar. Tab selection (gid=…) is respected. Works with OfficeRND exports, the Renewals spec sheet, or the Join/Leave sheet.</div>
+      </div>
+      <div id="resolvedUrl" style="font-size:11px;color:var(--g500);margin:-8px 0 12px;word-break:break-all"></div>
+      <button class="btn-pri" onclick="saveAndLoad()">Save & Load</button>
+      <button class="btn-sec" onclick="loadSampleData()">Use Sample Data</button>
+      <button class="btn-sec" onclick="document.getElementById('pastePanel').style.display='block';document.getElementById('pastePanel').scrollIntoView({behavior:'smooth'})" style="margin-left:4px">Paste CSV instead →</button>
+      <div style="margin-top:14px;padding:10px 14px;background:var(--g50);border-radius:8px;font-size:12px;color:var(--g700)">
+        <strong>Supported formats:</strong> OfficeRND membership export (auto-filters PS plan), Join/Leave movement sheet (surfaces upcoming ends), or the WORQ Renewals spec sheet (full auto-pricing).
+      </div>
+    </div>
+
+    <!-- PASTE FALLBACK PANEL — shown automatically when URL fetch fails -->
+    <div class="scard" id="pastePanel" style="display:none;border:2px solid var(--warn)">
+      <h3>📋 Paste CSV Data</h3>
+      <p style="color:var(--g700);margin-bottom:12px">The URL fetch failed (usually a browser CORS restriction when opening the file locally). Use this instead — it always works:</p>
+      <ol style="font-size:13px;color:var(--g700);line-height:1.8;margin:0 0 14px 18px">
+        <li>Open your Google Sheet</li>
+        <li>Go to <strong>File → Download → CSV (.csv)</strong></li>
+        <li>Open the downloaded file in a text editor, select all, copy</li>
+        <li>Paste below and click Load</li>
+      </ol>
+      <div class="fg">
+        <label>Paste CSV here</label>
+        <textarea id="pasteArea" rows="8" placeholder="company_name,membership_id,outlet_code,…&#10;Acme Sdn Bhd,abc123,TTDI,…" style="font-size:12px;font-family:monospace;width:100%;padding:10px;border:1px solid var(--g300);border-radius:6px;resize:vertical"></textarea>
+      </div>
+      <button class="btn-pri" onclick="loadFromPaste()">Load Pasted Data</button>
+      <button class="btn-sec" onclick="document.getElementById('pastePanel').style.display='none'">Dismiss</button>
+    </div>
+    <div class="scard">
+      <h3>📄 Upload Membership Agreement PDF</h3>
+      <p>Upload a signed MA PDF to extract membership details automatically. Useful when sheet data is missing room type, free months, or rate information.</p>
+      <div class="pdf-area" onclick="document.getElementById('pdfInput').click()">
+        <div class="ico">📎</div>
+        <p>Click to upload MA PDF</p>
+        <div class="hint">Supports text-based PDFs. Scanned PDFs may not extract correctly.</div>
+      </div>
+      <input type="file" id="pdfInput" accept=".pdf" onchange="handlePdfUpload(event)">
+      <div id="pdfResult" style="margin-top:14px;display:none"></div>
+    </div>
+    <div class="scard">
+      <h3>🏢 Outlet Occupancy</h3>
+      <p>Enter current occupancy % per outlet. The tool uses this to flag retention vs revenue optimisation strategy on each renewal card. Update weekly alongside your OfficeRND export.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px" id="occInputGrid">
+        <!-- Populated by JS -->
+      </div>
+      <div style="font-size:12px;color:var(--g500);margin-bottom:14px">
+        🔴 &gt;85% = <strong>High</strong> — retention priority &nbsp;|&nbsp;
+        🟢 60–85% = <strong>Standard</strong> — normal optimisation &nbsp;|&nbsp;
+        🟡 &lt;60% = <strong>Low</strong> — avoid rate hike
+      </div>
+      <button class="btn-pri" id="btnSaveOcc" onclick="saveOccupancy()">Save Occupancy</button>
+      <button class="btn-sec" onclick="clearOccupancy()">Clear All</button>
+    </div>
+    <div class="scard">
+      <h3>ℹ️ Retail Rates Reference</h3>
+      <p>Base retail rates used for cap calculation and promo detection (per pax/month, 12+ months, non-window).</p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="background:var(--g50)">
+          <th style="padding:8px 12px;text-align:left;border-bottom:1px solid var(--g200)">Outlet</th>
+          <th style="padding:8px 12px;text-align:left;border-bottom:1px solid var(--g200)">Code</th>
+          <th style="padding:8px 12px;text-align:right;border-bottom:1px solid var(--g200)">Rate/pax</th>
+        </tr></thead>
+        <tbody id="rateTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GUIDE PANEL -->
+  <div class="panel" id="panel-guide">
+    <div style="max-width:780px">
+
+      <!-- Sheet shortcut -->
+      <div style="background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:18px 24px;margin-bottom:20px;border:1px solid var(--cream-d);display:flex;align-items:center;justify-content:space-between;gap:16px">
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--primary);margin-bottom:3px">📊 Renewal Tracking Sheet</div>
+          <div style="font-size:13px;color:var(--g500)">The Google Sheet your team uses to track email reminders, MA signing, ORND upload, and agreed rates.</div>
+        </div>
+        <a href="https://docs.google.com/spreadsheets/d/1yEfpsAl_bYynP7-Fh7ux7v9A6t4RbIMk92d7-oiL-Oo/edit" target="_blank" style="flex-shrink:0;padding:10px 22px;background:var(--accent);color:#fff;border-radius:6px;font-size:14px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap">Open Sheet ↗</a>
+      </div>
+
+      <!-- The short version -->
+      <div class="scard" style="max-width:none">
+        <h3>The short version</h3>
+        <p style="margin-bottom:0">The <strong>Google Sheet</strong> is your accountability system — it tracks whether actions have been taken. The <strong>Pricing Tool</strong> is your calculation engine — it tells you what to offer and when to send the notice. Use both; they do different jobs.</p>
+      </div>
+
+      <!-- Two-column what each does -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div class="scard" style="max-width:none;margin-bottom:0;border-top:3px solid var(--g300)">
+          <h3 style="margin-bottom:12px">📋 Google Sheet — track actions</h3>
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <tbody>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:7px 0;color:var(--g700)">Email reminder 1 / 2 / 3 sent?</td><td style="padding:7px 0;text-align:right;color:var(--g500);font-size:11px">MAs, AOMs</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:7px 0;color:var(--g700)">MA signed and returned?</td><td style="padding:7px 0;text-align:right;color:var(--g500);font-size:11px">MAs</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:7px 0;color:var(--g700)">Uploaded to OfficeRND?</td><td style="padding:7px 0;text-align:right;color:var(--g500);font-size:11px">MAs</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:7px 0;color:var(--g700)">Pricing proposal vs. agreed rate</td><td style="padding:7px 0;text-align:right;color:var(--g500);font-size:11px">AOMs</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:7px 0;color:var(--g700)">AOM negotiation notes</td><td style="padding:7px 0;text-align:right;color:var(--g500);font-size:11px">AOMs</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:7px 0;color:var(--g700)">Outlet PIC accountability</td><td style="padding:7px 0;text-align:right;color:var(--g500);font-size:11px">Team leads</td></tr>
+              <tr><td style="padding:7px 0;color:var(--g700)">Month-by-month pipeline view</td><td style="padding:7px 0;text-align:right;color:var(--g500);font-size:11px">Management</td></tr>
+            </tbody>
+          </table>
+          <div style="margin-top:14px;padding:10px 12px;background:var(--g50);border-radius:6px;font-size:12px;color:var(--g700)">✅ Keep using the Sheet for all of this. It's your source of truth for whether something got done.</div>
+        </div>
+        <div class="scard" style="max-width:none;margin-bottom:0;border-top:3px solid var(--accent)">
+          <h3 style="margin-bottom:12px">⚡ Pricing Tool — calculate what to offer</h3>
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <tbody>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:7px 0;color:var(--g700)">Proposed renewal rate (Base + Alt)</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:7px 0;color:var(--g700)">Notice send-by date (Clause A or B)</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:7px 0;color:var(--g700)">Total MRR at risk by outlet / window</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:7px 0;color:var(--g700)">Tier classification (consistent across all MAs)</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:7px 0;color:var(--g700)">WORQ Credits &amp; deposit top-up figures</td></tr>
+              <tr><td style="padding:7px 0;color:var(--g700)">Draft renewal email (copy-paste ready)</td></tr>
+            </tbody>
+          </table>
+          <div style="margin-top:14px;padding:10px 12px;background:var(--accent-l);border-radius:6px;font-size:12px;color:#92400E">⚡ The Tool replaces manual pricing math — not the Sheet. It removes the calculation step before the MA fills in the Sheet.</div>
+        </div>
+      </div>
+
+      <!-- Workflow steps -->
+      <div class="scard" style="max-width:none">
+        <h3 style="margin-bottom:16px">The workflow — Sheet + Tool together</h3>
+        <div style="display:flex;flex-direction:column;gap:0">
+          <div style="display:flex;gap:16px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--g200)">
+            <div style="width:28px;height:28px;background:var(--primary);color:#FF8A00;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">1</div>
+            <div><strong style="color:var(--primary)">Export from OfficeRND</strong><br><span style="font-size:13px;color:var(--g500)">Membership reference sheet → UseThis.csv. No massaging needed — paste the raw export directly.</span></div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--g200)">
+            <div style="width:28px;height:28px;background:var(--primary);color:#FF8A00;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">2</div>
+            <div><strong style="color:var(--primary)">Load into this Tool</strong><br><span style="font-size:13px;color:var(--g500)">Settings → Paste CSV → Load. Set Window to 180 days to see ahead. Use the Outlet filter to focus on your accounts.</span></div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--g200)">
+            <div style="width:28px;height:28px;background:var(--primary);color:#FF8A00;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">3</div>
+            <div><strong style="color:var(--primary)">Check notice deadlines</strong><br><span style="font-size:13px;color:var(--g500)">Tool auto-calculates Clause A / B and shows "Send by [date]" per contract. Use Flag → Notice Overdue or Send Notice Soon to triage.</span></div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--g200)">
+            <div style="width:28px;height:28px;background:var(--primary);color:#FF8A00;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">4</div>
+            <div><strong style="color:var(--primary)">Get pricing for each company</strong><br><span style="font-size:13px;color:var(--g500)">Click any card → see Base Offer + Alt Offer + draft email. Copy the email, paste into Gmail, personalise and send.</span></div>
+          </div>
+          <div style="display:flex;gap:16px;align-items:flex-start;padding:12px 0">
+            <div style="width:28px;height:28px;background:var(--accent);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">5</div>
+            <div><strong style="color:var(--primary)">Update the Sheet after action</strong><br><span style="font-size:13px;color:var(--g500)">Email 1 sent ✓ · MA signed ✓ · Agreed rate logged · ORND uploaded ✓. The Sheet stays the record of what was done.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters + Notice Period side by side -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div class="scard" style="max-width:none;margin-bottom:0">
+          <h3 style="margin-bottom:12px">Filter guide</h3>
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <tbody>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:6px 0;font-weight:600;color:var(--primary)">Window: 90 days</td><td style="padding:6px 0;color:var(--g500)">Default — weekly review</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:6px 0;font-weight:600;color:var(--primary)">Window: 180 days</td><td style="padding:6px 0;color:var(--g500)">Quarterly pipeline planning</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:6px 0;font-weight:600;color:var(--primary)">Window: All PS</td><td style="padding:6px 0;color:var(--g500)">Full portfolio view</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:6px 0;font-weight:600;color:var(--primary)">Plan: PS / HD / VO…</td><td style="padding:6px 0;color:var(--g500)">Filter by product type</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:6px 0;font-weight:600;color:var(--primary)">Outlet filter</td><td style="padding:6px 0;color:var(--g500)">MA views only their accounts</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:6px 0;font-weight:600;color:var(--danger)">🔴 Notice Overdue</td><td style="padding:6px 0;color:var(--g500)">Urgent — send now</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:6px 0;font-weight:600;color:#D97706">🔔 Send Notice Soon</td><td style="padding:6px 0;color:var(--g500)">≤14 days to send</td></tr>
+              <tr style="border-bottom:1px solid var(--g200)"><td style="padding:6px 0;font-weight:600;color:var(--info)">⭐ Key Account</td><td style="padding:6px 0;color:var(--g500)">MRR ≥ RM15,000</td></tr>
+              <tr><td style="padding:6px 0;font-weight:600;color:#92400E">⚠️ Promo Rate</td><td style="padding:6px 0;color:var(--g500)">Needs AM approval first</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="scard" style="max-width:none;margin-bottom:0">
+          <h3 style="margin-bottom:12px">Notice period — Clause A vs B</h3>
+          <p style="font-size:13px;color:var(--g500);margin-bottom:12px">Auto-calculated from contract start date. Always verify against the signed MA if there's a dispute.</p>
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead><tr style="background:var(--g50)">
+              <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--g200);font-size:11px;text-transform:uppercase;letter-spacing:.4px">Clause</th>
+              <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--g200);font-size:11px;text-transform:uppercase;letter-spacing:.4px">Tenure</th>
+              <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--g200);font-size:11px;text-transform:uppercase;letter-spacing:.4px">Notice</th>
+            </tr></thead>
+            <tbody>
+              <tr style="border-bottom:1px solid var(--g200)">
+                <td style="padding:8px 10px;font-weight:700;color:var(--primary)">Clause A</td>
+                <td style="padding:8px 10px;color:var(--g700)">&lt; 12 months tenure</td>
+                <td style="padding:8px 10px;color:var(--g700)"><strong>2 months</strong> if &gt;3mo contract · <strong>1 month</strong> if ≤3mo contract</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 10px;font-weight:700;color:var(--primary)">Clause B</td>
+                <td style="padding:8px 10px;color:var(--g700)">≥ 12 months tenure</td>
+                <td style="padding:8px 10px;color:var(--g700)"><strong>3 months</strong> if ≥6mo remaining · <strong>2 months</strong> if &lt;6mo remaining</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="margin-top:14px">
+            <div style="font-size:12px;font-weight:700;color:var(--g700);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">Data needed for accurate pricing</div>
+            <table style="width:100%;border-collapse:collapse;font-size:12px">
+              <tbody>
+                <tr style="border-bottom:1px solid var(--g200)"><td style="padding:5px 0;color:var(--g700)">membership_start/end_date</td><td style="padding:5px 0;text-align:right"><span style="color:var(--ok);font-weight:600">✅ In ORND</span></td></tr>
+                <tr style="border-bottom:1px solid var(--g200)"><td style="padding:5px 0;color:var(--g700)">current_monthly_rate</td><td style="padding:5px 0;text-align:right"><span style="color:var(--ok);font-weight:600">✅ In ORND</span></td></tr>
+                <tr style="border-bottom:1px solid var(--g200)"><td style="padding:5px 0;color:var(--g700)">mrr_benchmark</td><td style="padding:5px 0;text-align:right"><span style="color:var(--danger);font-weight:600">❌ Not in ORND</span></td></tr>
+                <tr style="border-bottom:1px solid var(--g200)"><td style="padding:5px 0;color:var(--g700)">good_paymaster</td><td style="padding:5px 0;text-align:right"><span style="color:var(--danger);font-weight:600">❌ Not in ORND</span></td></tr>
+                <tr><td style="padding:5px 0;color:var(--g700)">room_type (window/non)</td><td style="padding:5px 0;text-align:right"><span style="color:var(--danger);font-weight:600">❌ Not in ORND</span></td></tr>
+              </tbody>
+            </table>
+            <div style="margin-top:8px;font-size:11px;color:var(--g500)">Workaround: enter missing fields directly in the card modal. Tool prompts you when data is absent.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FAQ -->
+      <div class="scard" style="max-width:none">
+        <h3 style="margin-bottom:16px">Common questions</h3>
+        <div style="display:flex;flex-direction:column;gap:14px;font-size:13px">
+          <div><strong style="color:var(--primary)">Do I need to publish the Google Sheet for the Tool to load it?</strong><br><span style="color:var(--g500)">No. Set sharing to "Anyone with the link can view" and paste the URL in Settings. If that fails (common when running locally), use Settings → Paste CSV instead.</span></div>
+          <div style="border-top:1px solid var(--g200);padding-top:14px"><strong style="color:var(--primary)">The tool shows fewer companies than the Sheet. Why?</strong><br><span style="color:var(--g500)">The Tool shows PS (Private Suite) contracts only. VOs, HDs, and other plans are excluded. Set Window to "All PS" to see all PS contracts regardless of renewal date.</span></div>
+          <div style="border-top:1px solid var(--g200);padding-top:14px"><strong style="color:var(--primary)">Can I trust the tool's pricing to send to clients?</strong><br><span style="color:var(--g500)">Use it as a starting point. The draft email is a template — always review before sending. For Key Accounts and Promo Rate companies, AM approval is required before any offer goes out.</span></div>
+          <div style="border-top:1px solid var(--g200);padding-top:14px"><strong style="color:var(--primary)">The clause / notice date doesn't match the signed MA. Which is right?</strong><br><span style="color:var(--g500)">Always trust the signed MA. The tool calculates from OfficeRND dates — if the start date in ORND is wrong, the clause calculation will be off. Verify the contract for any dispute.</span></div>
+        </div>
+      </div>
+
+      <div style="text-align:center;font-size:12px;color:var(--g500);padding:8px 0 24px">Last updated June 2026 · WORQ internal use · Questions → Chea</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="detailOverlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mhdr">
+      <div>
+        <div class="mtitle" id="modalTitle"></div>
+        <div class="msub" id="modalSub"></div>
+      </div>
+      <button class="mclose" onclick="document.getElementById('detailOverlay').classList.remove('open')">✕</button>
+    </div>
+    <div class="mbody" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loader" id="loader">
+  <div class="spinner"></div>
+  <div class="loader-txt" id="loaderTxt">Loading...</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+// ─── CONSTANTS ───────────────────────────────────────────────────────────────
+const RETAIL_RATES = {
+  TTDI:770, UBP:800, KLG:800, KLS:970, MUB:800,
+  SPM:500, ITG:1170, SV2:800, BU:970, APT:1170, MSH:970,
+  '8FA':800,  // confirm retail rate with Chea — using 800 as placeholder
+  STO:0
+};
+const OUTLET_NAMES = {
+  TTDI:'TTDI', UBP:'Subang (UBP)', KLG:'KL Gateway', KLS:'KL Sentral',
+  MUB:'Bangsar (MUB)', SPM:'Sunway Putra', ITG:'Intermark (ITG)',
+  SV2:'Sunway Velocity', BU:'Bandar Utama', APT:'Intermark (APT)',
+  MSH:'Menara Shell', '8FA':'8FA', STO:'STO'
+};
+const SST = 0.08;
+const KA_THRESHOLD = 15000;
+const GROWTH_THRESHOLD = 0.10;
+const FREE_GENEROUS = [{min:36,fm:4},{min:24,fm:2},{min:18,fm:1},{min:12,fm:0.5}];
+const FREE_STANDARD = [{min:30,fm:2},{min:24,fm:1},{min:12,fm:0.5}];
+const TIER_UPLIFT = {LONG_TERM_GROWTH:0, LOYALTY:0.02, SHORT_TERM_GROWTH:0.03, NORMAL:0.05};
+const TIER_LABEL = {LONG_TERM_GROWTH:'Long Term Growth', LOYALTY:'Loyalty', SHORT_TERM_GROWTH:'Short Term Growth', NORMAL:'Normal'};
+const TIER_CSS = {LONG_TERM_GROWTH:'tier-ltg', LOYALTY:'tier-loy', SHORT_TERM_GROWTH:'tier-stg', NORMAL:'tier-nor'};
+
+let allCompanies = [];
+let csvUrl = '';
+let DATA_SOURCE_TYPE = 'renewals'; // 'renewals' | 'joinleave'
+let renewalWindowDays = 90; // configurable via filter bar
+let OUTLET_OCCUPANCY = {}; // { TTDI: 87, KLG: 72, ... } — set in Settings
+
+// ─── SAMPLE DATA ─────────────────────────────────────────────────────────────
+function getSampleData() {
+  const today = new Date();
+  const d = (y,m,day) => { const dt=new Date(y,m-1,day); return dt; };
+  const addDays = (dt,n) => { const d=new Date(dt); d.setDate(d.getDate()+n); return d; };
+  const fmtD = dt => `${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}/${dt.getFullYear()}`;
+
+  return [
+    // Long Term Growth + Key Account + Promo
+    { companyName:'ByteDance Malaysia Sdn Bhd', membershipId:'MEM001', outletCode:'ITG',
+      roomName:'Suite 18-A', roomType:'Window', pax:20,
+      startDate: fmtD(d(2022,8,1)), endDate: fmtD(addDays(today,52)),
+      contractDurationMonths:48, monthlyRateExSST:22000, currentMRR:22000,
+      mrrBenchmark:16000, freeMonthsCurrent:1, depositHeld:44000,
+      goodPaymaster:'Y', amName:'Sky', notes:'Key client, handle carefully' },
+    // Loyalty + Good paymaster
+    { companyName:'Acme Consulting Sdn Bhd', membershipId:'MEM002', outletCode:'TTDI',
+      roomName:'PS-07', roomType:'Non-Window', pax:4,
+      startDate: fmtD(d(2022,4,15)), endDate: fmtD(addDays(today,25)),
+      contractDurationMonths:24, monthlyRateExSST:2800, currentMRR:2800,
+      mrrBenchmark:2800, freeMonthsCurrent:0, depositHeld:5600,
+      goodPaymaster:'Y', amName:'Andrew', notes:'On promo rate' },
+    // Short Term Growth
+    { companyName:'Shopee Malaysia Sdn Bhd', membershipId:'MEM003', outletCode:'BU',
+      roomName:'Level 8-B', roomType:'Non-Window', pax:6,
+      startDate: fmtD(d(2024,8,1)), endDate: fmtD(addDays(today,68)),
+      contractDurationMonths:12, monthlyRateExSST:5820, currentMRR:5820,
+      mrrBenchmark:4500, freeMonthsCurrent:0, depositHeld:11640,
+      goodPaymaster:'N', amName:'Darren', notes:'' },
+    // Normal + promo (free months)
+    { companyName:'TechStartup Sdn Bhd', membershipId:'MEM004', outletCode:'TTDI',
+      roomName:'PS-03', roomType:'Non-Window', pax:3,
+      startDate: fmtD(d(2025,10,1)), endDate: fmtD(addDays(today,73)),
+      contractDurationMonths:12, monthlyRateExSST:2310, currentMRR:2310,
+      mrrBenchmark:'', freeMonthsCurrent:0.5, depositHeld:2310,
+      goodPaymaster:'', amName:'Sky', notes:'' },
+    // GreenTech - 2 memberships
+    { companyName:'GreenTech Malaysia Sdn Bhd', membershipId:'MEM005A', outletCode:'APT',
+      roomName:'Suite 12', roomType:'Window', pax:5,
+      startDate: fmtD(d(2024,2,1)), endDate: fmtD(addDays(today,85)),
+      contractDurationMonths:18, monthlyRateExSST:5850, currentMRR:5850,
+      mrrBenchmark:5000, freeMonthsCurrent:0, depositHeld:11700,
+      goodPaymaster:'Y', amName:'Majorie', notes:'' },
+    { companyName:'GreenTech Malaysia Sdn Bhd', membershipId:'MEM005B', outletCode:'TTDI',
+      roomName:'PS-11', roomType:'Non-Window', pax:3,
+      startDate: fmtD(d(2025,4,1)), endDate: fmtD(addDays(today,105)),
+      contractDurationMonths:12, monthlyRateExSST:2310, currentMRR:2310,
+      mrrBenchmark:'', freeMonthsCurrent:0, depositHeld:2310,
+      goodPaymaster:'Y', amName:'Majorie', notes:'' }
+  ];
+}
+
+// ─── DATE HELPERS ─────────────────────────────────────────────────────────────
+function parseDate(s) {
+  if (!s) return null;
+  s = String(s).trim();
+  // MM/DD/YYYY
+  const slashParts = s.split('/');
+  if (slashParts.length === 3) return new Date(+slashParts[2], +slashParts[0]-1, +slashParts[1]);
+  // YYYY-MM-DD (ISO) — parse as local to avoid UTC midnight shift
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return new Date(+iso[1], +iso[2]-1, +iso[3]);
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+function daysUntil(d) {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const dd = new Date(d); dd.setHours(0,0,0,0);
+  return Math.ceil((dd - now) / 86400000);
+}
+function monthsBetween(d1, d2) {
+  return (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth());
+}
+function formatDate(d) {
+  if (!d) return '—';
+  return d.toLocaleDateString('en-MY', {day:'2-digit', month:'short', year:'numeric'});
+}
+function formatRM(n, decimals=0) {
+  if (isNaN(n)) return '—';
+  return 'RM ' + Number(n).toLocaleString('en-MY', {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+}
+// ─── NOTICE PERIOD (Clause A/B) ───────────────────────────────────────────────
+// Clause A (tenure < 12 months):  >3m remaining → 2m notice | ≤3m remaining → 1m notice
+// Clause B (tenure ≥ 12 months): ≥6m remaining → 3m notice  | <6m remaining → 2m notice
+function computeNoticePeriod(m) {
+  const startDate = parseDate(m.startDate);
+  const endDate = parseDate(m.endDate);
+  if (!startDate || !endDate) return null;
+  const tenureMonths = Math.max(1, monthsBetween(startDate, endDate));
+  const today = new Date(); today.setHours(0,0,0,0);
+  const remainingMonths = monthsBetween(today, endDate); // may be negative if overdue
+  const clause = tenureMonths >= 12 ? 'B' : 'A';
+  let noticePeriodMonths;
+  if (clause === 'A') {
+    noticePeriodMonths = tenureMonths > 3 ? 2 : 1;
+  } else {
+    // Clause B
+    noticePeriodMonths = remainingMonths >= 6 ? 3 : 2;
+  }
+  const noticeSendBy = new Date(endDate);
+  noticeSendBy.setMonth(noticeSendBy.getMonth() - noticePeriodMonths);
+  const daysToNotice = daysUntil(noticeSendBy); // negative = already passed
+  return { clause, noticePeriodMonths, noticeSendBy, daysToNotice, tenureMonths, remainingMonths };
+}
+
+function fmtFreeMonths(fm) {
+  if (!fm) return null;
+  if (fm === 0.5) return '2 weeks free';
+  if (fm === 1) return '1 month free';
+  return fm + ' months free';
+}
+
+// ─── TENURE PREMIUM ──────────────────────────────────────────────────────────
+function tenurePremium(months) {
+  if (months < 3) return 0.20;
+  if (months < 6) return 0.10;
+  if (months < 12) return 0.05;
+  if (months <= 36) return 0;
+  return 0; // enterprise – still cap at base retail
+}
+
+// ─── RETAIL CAP ──────────────────────────────────────────────────────────────
+function retailCap(outletCode, roomType, tenureMonths, pax) {
+  const base = RETAIL_RATES[outletCode] || 0;
+  const tp = tenurePremium(tenureMonths);
+  const wp = roomType === 'Window' ? 0.10 : 0;
+  return base * (1 + tp + wp) * pax;
+}
+
+// ─── FREE MONTHS FOR TENURE ──────────────────────────────────────────────────
+function getFreeMonths(tierSchedule, newTenureMonths) {
+  const schedule = tierSchedule === 'generous' ? FREE_GENEROUS : FREE_STANDARD;
+  for (const s of schedule) {
+    if (newTenureMonths >= s.min) return s.fm;
+  }
+  return 0;
+}
+
+// ─── EFFECTIVE RATE ──────────────────────────────────────────────────────────
+function effectiveRate(nominalRate, contractMonths, freeMonths) {
+  const total = contractMonths + (freeMonths || 0);
+  if (total <= 0) return nominalRate;
+  return (nominalRate * contractMonths) / total;
+}
+
+// ─── TIER DETECTION ──────────────────────────────────────────────────────────
+function detectTier(m) {
+  const startDate = parseDate(m.startDate);
+  const endDate = parseDate(m.endDate);
+  if (!startDate || !endDate) return 'NORMAL';
+  const tenureMonths = monthsBetween(startDate, endDate);
+  const isLong = tenureMonths >= 24;
+  const benchmark = parseFloat(m.mrrBenchmark);
+  const currentMRR = parseFloat(m.currentMRR) || parseFloat(m.monthlyRateExSST);
+  const hasGrowth = !isNaN(benchmark) && benchmark > 0 &&
+    ((currentMRR - benchmark) / benchmark) >= GROWTH_THRESHOLD;
+  if (isLong && hasGrowth) return 'LONG_TERM_GROWTH';
+  if (isLong) return 'LOYALTY';
+  if (hasGrowth) return 'SHORT_TERM_GROWTH';
+  return 'NORMAL';
+}
+
+function getTenureMonths(m) {
+  const s = parseDate(m.startDate), e = parseDate(m.endDate);
+  if (!s || !e) return 12;
+  return Math.max(1, monthsBetween(s, e));
+}
+
+// ─── PROMO DETECTION ─────────────────────────────────────────────────────────
+function isPromo(m) {
+  const pax = parseInt(m.pax) || 1;
+  const rate = parseFloat(m.monthlyRateExSST) || 0;
+  const perPax = rate / pax;
+  const tenure = getTenureMonths(m);
+  const cap = retailCap(m.outletCode, m.roomType, tenure, 1); // per pax
+  const ratePromo = perPax < cap * 0.999; // tiny epsilon
+  const fmPromo = parseFloat(m.freeMonthsCurrent) > 0;
+  return ratePromo || fmPromo;
+}
+
+// ─── GOOD PAYMASTER ──────────────────────────────────────────────────────────
+function isGoodPaymaster(m) {
+  const v = String(m.goodPaymaster || '').trim().toUpperCase();
+  if (v === 'Y') return true;
+  if (v === 'N') return false;
+  return null; // N/A
+}
+
+// ─── WORQ POINTS ─────────────────────────────────────────────────────────────
+function computeWorqPoints(m, tier, isKA) {
+  const pax = parseInt(m.pax) || 1;
+  const standard = Math.min(pax * 200, 2000);
+  const bonus = (!isKA && (tier === 'LONG_TERM_GROWTH' || tier === 'LOYALTY')) ? 300 : 0;
+  return { standard, bonus, total: standard + bonus };
+}
+
+// ─── DEPOSIT ─────────────────────────────────────────────────────────────────
+function computeDeposit(m, newTenureMonths, newRate) {
+  const pax = parseInt(m.pax) || 1;
+  let months;
+  if (pax >= 50) months = 3;
+  else if (newTenureMonths <= 6) months = 1;
+  else months = 2;
+  // Deposit based on full price: retail rate per pax × pax count (not net effective rate)
+  const retailPerPax = RETAIL_RATES[m.outletCode] || newRate / Math.max(pax, 1);
+  const required = retailPerPax * pax * months;
+  const held = parseFloat(m.depositHeld) || 0;
+  // Never suggest a reduction — top-up only; if held >= required, no action needed
+  const topup = Math.max(0, required - held);
+  return { required, held, topup, months };
+}
+
+// ─── PRICING ENGINE ──────────────────────────────────────────────────────────
+function computeOffers(m, tier, goodPaymaster) {
+  const rate = parseFloat(m.monthlyRateExSST) || 0;
+  const tenure = getTenureMonths(m);
+  const pax = parseInt(m.pax) || 1;
+  const fm = parseFloat(m.freeMonthsCurrent) || 0;
+  const promo = isPromo(m);
+  const cap = retailCap(m.outletCode, m.roomType || 'Non-Window', tenure, pax);
+  const schedule = (tier === 'LONG_TERM_GROWTH' || tier === 'LOYALTY') ? 'generous' : 'standard';
+  const currentEffective = effectiveRate(rate, tenure, fm);
+
+  // Uplift
+  let uplift = TIER_UPLIFT[tier];
+  if (goodPaymaster === true) uplift = Math.max(0, uplift - 0.01);
+
+  // BASE OFFER
+  let baseRate;
+  if (promo) {
+    // Maintain nominal rate, remove free months
+    baseRate = rate;
+  } else {
+    baseRate = Math.min(rate * (1 + uplift), cap);
+  }
+  const baseEff = effectiveRate(baseRate, tenure, 0); // no free months in base
+  const baseDeposit = computeDeposit(m, tenure, baseRate);
+
+  const base = {
+    label: 'Base Offer',
+    tenureMonths: tenure,
+    rate: baseRate,
+    rateInclSST: baseRate * (1 + SST),
+    effectiveRate: baseEff,
+    upliftPct: rate > 0 ? (baseRate - rate) / rate : 0,
+    effChangePct: currentEffective > 0 ? (baseEff - currentEffective) / currentEffective : 0,
+    freeMonths: 0,
+    deposit: baseDeposit,
+    promo: promo
+  };
+
+  // ALTERNATIVE OFFER
+  const altTenure = Math.max(12, tenure + 6);
+  const altFM = getFreeMonths(schedule, altTenure);
+  let altRate;
+  if (promo) {
+    altRate = rate; // maintain nominal
+  } else {
+    altRate = Math.min(rate * (1 + uplift), cap);
+  }
+  const altEff = effectiveRate(altRate, altTenure, altFM);
+  // Cap rule: suppress if alt effective < current effective
+  const showAlt = altEff >= currentEffective - 0.01;
+
+  let alt = null;
+  if (showAlt) {
+    const altDeposit = computeDeposit(m, altTenure, altRate);
+    alt = {
+      label: 'Alternative Offer',
+      tenureMonths: altTenure,
+      rate: altRate,
+      rateInclSST: altRate * (1 + SST),
+      effectiveRate: altEff,
+      upliftPct: rate > 0 ? (altRate - rate) / rate : 0,
+      effChangePct: currentEffective > 0 ? (altEff - currentEffective) / currentEffective : 0,
+      freeMonths: altFM,
+      deposit: altDeposit,
+      promo: promo
+    };
+  }
+
+  return { base, alt, currentEffective, promo };
+}
+
+// ─── PROCESS DATA ─────────────────────────────────────────────────────────────
+function processRaw(rows) {
+  // Group by company — all plans stored; plan filter applied in renderDashboard
+  const byCompany = {};
+  rows.forEach(m => {
+    const key = (m.companyName || '').trim();
+    if (!key) return;
+    if (!byCompany[key]) byCompany[key] = [];
+    byCompany[key].push(m);
+  });
+
+  const companies = [];
+  Object.entries(byCompany).forEach(([name, memberships]) => {
+    // PS-only: skip non-PS memberships entirely
+    const psMemberships = memberships.filter(m => {
+      const plan = ((m.plan || '').trim().toUpperCase()) || 'PS';
+      return plan === 'PS';
+    });
+    if (!psMemberships.length) return;
+
+    const totalMRR = psMemberships.reduce((s, m) => s + (parseFloat(m.currentMRR) || 0), 0);
+    const isKA = totalMRR >= KA_THRESHOLD;
+
+    // Find soonest renewal
+    let soonestDays = Infinity;
+    psMemberships.forEach(m => {
+      const d = parseDate(m.endDate);
+      if (d) { const n = daysUntil(d); if (n < soonestDays) soonestDays = n; }
+    });
+
+    // Process each PS membership
+    const processed = psMemberships.map(m => {
+      const tier = detectTier(m);
+      const gp = isGoodPaymaster(m);
+      const promo = !m._missingRate ? isPromo(m) : false;
+      const offers = !m._missingRate ? computeOffers(m, tier, gp) : null;
+      const worqPts = computeWorqPoints(m, tier, isKA);
+      const d = parseDate(m.endDate);
+      const days = d ? daysUntil(d) : 9999;
+      const notice = computeNoticePeriod(m);
+      return { ...m, plan: 'PS', tier, gp, promo, offers, worqPts, isKA, endDateParsed: d, daysUntil: days, notice };
+    });
+
+    companies.push({ name, memberships: processed, totalMRR, isKA, soonestDays });
+  });
+
+  // ── Second pass: detect suites that already have a future contract (already renewed) ──
+  // Build map: "OUTLET|room" → all contract start dates across all companies
+  const today = new Date(); today.setHours(0,0,0,0);
+  const roomStarts = {};
+  companies.forEach(c => c.memberships.forEach(m => {
+    if (!m.roomName || !m.outletCode) return;
+    const key = `${m.outletCode}|${m.roomName.trim().toLowerCase()}`;
+    const start = parseDate(m.startDate);
+    if (!roomStarts[key]) roomStarts[key] = [];
+    if (start) roomStarts[key].push(start);
+  }));
+
+  companies.forEach(c => {
+    c.memberships.forEach(m => {
+      if (!m.roomName || !m.outletCode || !m.endDateParsed) { m.isRenewed = false; return; }
+      const key = `${m.outletCode}|${m.roomName.trim().toLowerCase()}`;
+      const starts = roomStarts[key] || [];
+      // A future contract exists if any start date is >= this contract's end date AND still in the future
+      m.isRenewed = starts.some(s => s >= m.endDateParsed && s > today);
+      // Suppress notice logic for renewed memberships
+      if (m.isRenewed) m.notice = null;
+    });
+    // Recalculate soonestDays using non-renewed memberships only
+    const actionable = c.memberships.filter(m => !m.isRenewed);
+    c.soonestDays = actionable.length
+      ? Math.min(...actionable.map(m => m.daysUntil))
+      : c.memberships[0]?.daysUntil ?? 9999;
+  });
+
+  // Sort by soonest renewal
+  companies.sort((a, b) => a.soonestDays - b.soonestDays);
+  return companies;
+}
+
+// ─── CSV PARSING ──────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  // Strip BOM, normalize line endings
+  text = text.replace(/^﻿/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = text.split('\n').filter(l => l.trim());
+  if (lines.length < 2) return [];
+  // Auto-detect delimiter: tab (copied from Google Sheets) vs comma (downloaded CSV)
+  const firstLine = lines[0];
+  const tabCount = (firstLine.match(/\t/g) || []).length;
+  const commaCount = (firstLine.match(/,/g) || []).length;
+  const delim = tabCount >= commaCount && tabCount > 0 ? '\t' : ',';
+  const headers = parseCSVLine(lines[0], delim);
+  // Detect Join/Leave format (has churn_checker column)
+  const isJoinLeave = headers.some(h => h.trim().toLowerCase() === 'churn_checker');
+  const rawRows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = parseCSVLine(lines[i], delim);
+    if (vals.every(v => !v.trim())) continue;
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h.trim()] = (vals[idx] || '').trim(); });
+    rawRows.push(obj);
+  }
+  if (isJoinLeave) {
+    DATA_SOURCE_TYPE = 'joinleave';
+    return parseJoinLeaveRows(rawRows);
+  }
+  DATA_SOURCE_TYPE = 'renewals';
+  return rawRows.map(obj => mapColumns(obj));
+}
+
+// ─── JOIN/LEAVE FORMAT PARSER ─────────────────────────────────────────────────
+function toDateFromAny(str) {
+  if (!str) return null;
+  // Try YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return new Date(str.slice(0,10));
+  // Try DD/MM/YYYY
+  const p = str.split('/');
+  if (p.length === 3) return new Date(+p[2], +p[1]-1, +p[0]);
+  const d = new Date(str);
+  return isNaN(d) ? null : d;
+}
+function fmtDDMMYYYY(d) {
+  if (!d) return '';
+  return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+}
+function parseJoinLeaveRows(rawRows) {
+  // Sort chronologically
+  rawRows.sort((a, b) => {
+    const da = toDateFromAny(a.full_date), db = toDateFromAny(b.full_date);
+    return (da||0) - (db||0);
+  });
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const lookbackCutoff = new Date(today); lookbackCutoff.setDate(lookbackCutoff.getDate() - 60);
+
+  // Build lookup: companyId+location → [rows in order]
+  const byKey = {};
+  rawRows.forEach(r => {
+    const key = (r.Company_ID || r.Company_Name || '').trim() + '|' + (r.Location_Name || '').trim().toUpperCase();
+    if (!byKey[key]) byKey[key] = [];
+    byKey[key].push(r);
+  });
+
+  const memberships = [];
+  const seen = new Set();
+
+  rawRows.forEach(r => {
+    const churn = (r.churn_checker || '').toLowerCase();
+    const mtype = (r.member_type || '').toLowerCase();
+    const isEnd = churn.includes('end') || mtype.includes('end');
+    if (!isEnd) return;
+
+    const endDate = toDateFromAny(r.full_date);
+    if (!endDate || endDate < lookbackCutoff) return;
+
+    const compName = (r.Company_Name || '').trim();
+    const compId = (r.Company_ID || compName).trim();
+    const loc = (r.Location_Name || '').trim().toUpperCase();
+    const pax = parseInt(r.Pax_Size) || 0;
+
+    // Dedup: one membership per company+location (keep earliest upcoming end)
+    const dedupKey = compId + '|' + loc;
+    if (seen.has(dedupKey)) return;
+    seen.add(dedupKey);
+
+    // Find most recent Start row before this end
+    const key = compId + '|' + loc;
+    const groupRows = byKey[key] || [];
+    const startRows = groupRows.filter(g => {
+      const gd = toDateFromAny(g.full_date);
+      const gc = (g.churn_checker || '').toLowerCase();
+      const gm = (g.member_type || '').toLowerCase();
+      return gd && gd < endDate && (gc.includes('start') || gm.includes('start'));
+    });
+    const startRow = startRows.length ? startRows[startRows.length - 1] : null;
+    const startDate = startRow ? toDateFromAny(startRow.full_date) : null;
+
+    memberships.push({
+      companyName: compName,
+      membershipId: compId,
+      outletCode: loc,
+      roomName: '',
+      roomType: 'Non-Window',
+      pax: String(pax),
+      startDate: fmtDDMMYYYY(startDate),
+      endDate: fmtDDMMYYYY(endDate),
+      contractDurationMonths: '',
+      monthlyRateExSST: '0',
+      currentMRR: '0',
+      mrrBenchmark: '',
+      freeMonthsCurrent: '0',
+      depositHeld: '0',
+      goodPaymaster: '',
+      amName: '',
+      notes: (r.member_type || '').replace(/end/i,'').trim(),
+      _missingRate: true  // flag: rate needs manual input
+    });
+  });
+
+  return memberships;
+}
+function parseCSVLine(line, delim = ',') {
+  const result = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"' && !inQ) { inQ = true; continue; }
+    if (c === '"' && inQ) { if (line[i+1] === '"') { cur += '"'; i++; } else inQ = false; continue; }
+    if (c === delim && !inQ) { result.push(cur); cur = ''; continue; }
+    cur += c;
+  }
+  result.push(cur);
+  return result;
+}
+function mapColumns(row) {
+  // Pick first non-empty, non-N/A value from a list of candidate keys
+  const get = (...keys) => {
+    for (const k of keys) {
+      const v = row[k];
+      if (v !== undefined && v !== null && String(v).trim() !== '' && String(v).trim() !== 'N/A') return String(v).trim();
+    }
+    return '';
+  };
+  const rt = get('room_type','Room Type','roomType');
+  return {
+    companyName:          get('company_name','Company Name','companyName'),
+    membershipId:         get('membership_id','Membership ID','membershipId'),
+    outletCode:           get('outlet_code','Outlet Code','outletCode').toUpperCase(),
+    roomName:             get('room_name','Room Name / Number','Room Name','roomName'),
+    roomType:             (rt && rt !== 'N/A') ? rt : 'Non-Window',
+    pax:                  get('current_pax_count','Current Pax Count','pax') || '0',
+    startDate:            get('membership_start_date','Contract Start Date','start_date','startDate'),
+    endDate:              get('membership_end_date','Contract End Date','end_date','endDate'),
+    contractDurationMonths: get('contact_duration_month','Contract Duration (months)','duration'),
+    monthlyRateExSST:     get('current_monthly_rate','Current Monthly Rate ex-SST (RM)','monthly_rate','monthlyRate') || '0',
+    currentMRR:           get('current_mrr','Current MRR (RM)','currentMRR') || '0',
+    mrrBenchmark:         get('mrr_benchmark','MRR Benchmark (RM)','mrrBenchmark'),
+    freeMonthsCurrent:    get('free_month','Free Months in Current Contract','free_months','freeMonths') || '0',
+    depositHeld:          get('deposit_held','Deposit Held ex-SST (RM)','depositHeld') || '0',
+    goodPaymaster:        get('good_paymaster','Good Paymaster (Y/N)','goodPaymaster'),
+    amName:               get('pic_name','AM / PIC Name','am_name','amName'),
+    notes:                get('notes','Notes'),
+    plan:                 get('plan')
+  };
+}
+
+// ─── SHEET URL PARSER ────────────────────────────────────────────────────────
+// Accepts any Google Sheets URL (edit, share, export, or published CSV) and
+// normalises it to a direct CSV export URL that doesn't require publishing.
+function parseSheetUrl(input) {
+  if (!input) return null;
+  input = input.trim();
+  // Already a published CSV (pub?output=csv) — use as-is, it's already CORS-friendly
+  if (input.includes('pub?output=csv') || input.includes('pub?gid=')) return input;
+  // Already a gviz URL — use as-is
+  if (input.includes('gviz/tq')) return input;
+  // Already an export URL — convert to gviz which supports CORS without auth
+  // (export?format=csv requires Google auth cookies from the browser session)
+  // Extract sheet ID
+  const idMatch = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (!idMatch) return input; // Unknown format — try anyway
+  const sheetId = idMatch[1];
+  // Extract tab gid (from ?gid=, #gid=, or &gid=)
+  const gidMatch = input.match(/[#?&]gid=(\d+)/);
+  const gid = gidMatch ? gidMatch[1] : '0';
+  // Use gviz/tq endpoint: works with "Anyone with the link can view", supports CORS from file:// origins
+  return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=${gid}`;
+}
+
+// ─── DATA LOADING ─────────────────────────────────────────────────────────────
+function loadSampleData() {
+  showLoader('Loading sample data...');
+  setTimeout(() => {
+    const rows = getSampleData();
+    allCompanies = processRaw(rows);
+    renderDashboard();
+    document.getElementById('lastUpdated').textContent = 'Sample data · ' + new Date().toLocaleTimeString();
+    switchTab('dashboard');
+    hideLoader();
+  }, 400);
+}
+
+async function reloadData() {
+  const savedUrl = localStorage.getItem('csvUrl');
+  if (!savedUrl) { loadSampleData(); return; }
+  const fetchUrl = parseSheetUrl(savedUrl);
+  showLoader('Loading from sheet...');
+  const hint = document.getElementById('resolvedUrl');
+  if (hint) hint.textContent = 'Fetching: ' + fetchUrl;
+
+  let text = null, lastErr = '';
+
+  // Strategy 1: Direct fetch (gviz URL, works when served via http:// or CORS allowed)
+  try {
+    const res = await fetch(fetchUrl);
+    if (res.ok) { text = await res.text(); }
+    else lastErr = 'HTTP ' + res.status;
+  } catch(e) { lastErr = e.message || 'Network/CORS error'; }
+
+  // Strategy 2: CORS proxy fallback (handles file:// origin restriction)
+  if (!text) {
+    try {
+      const proxy = 'https://corsproxy.io/?' + encodeURIComponent(fetchUrl);
+      const res2 = await fetch(proxy);
+      if (res2.ok) { text = await res2.text(); }
+    } catch(e2) { /* proxy also failed */ }
+  }
+
+  hideLoader();
+
+  if (!text) {
+    // Show inline paste fallback instead of just alerting
+    showLoadError(lastErr, fetchUrl);
+    return;
+  }
+
+  // Validate it's actually CSV (not an HTML login page)
+  if (text.trim().startsWith('<')) {
+    showLoadError('auth_required', fetchUrl);
+    return;
+  }
+
+  const rows = parseCSV(text);
+  if (rows.length === 0) { showLoadError('Sheet loaded but no data rows found — check the tab gid is correct', fetchUrl); return; }
+  allCompanies = processRaw(rows);
+  renderDashboard();
+  document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  if (hint) hint.textContent = '✓ Loaded ' + rows.length + ' rows from sheet';
+  switchTab('dashboard');
+}
+
+function showLoadError(err, fetchUrl) {
+  const hint = document.getElementById('resolvedUrl');
+  const isAuthErr = err === 'auth_required';
+  if (hint) hint.innerHTML = isAuthErr
+    ? '<span style="color:var(--danger)">⚠ Google returned a login page — sheet access requires authentication (see below)</span>'
+    : '<span style="color:var(--danger)">⚠ ' + err + '</span>';
+
+  // Tailor the paste panel message
+  const panel = document.getElementById('pastePanel');
+  const panelMsg = panel.querySelector('p');
+  if (panelMsg && isAuthErr) {
+    panelMsg.innerHTML = `<strong>Why is this happening?</strong> The sheet is likely shared only with specific Google accounts (not "Anyone with the link can view"). The tool cannot authenticate to Google in a browser — it can only read public sheets.<br><br>
+    <strong>Fix options (pick one):</strong><br>
+    <ol style="margin:8px 0 0 16px;font-size:13px;line-height:1.8">
+      <li>In Google Sheets → Share → change to <strong>"Anyone with the link — Viewer"</strong>, then paste the URL and reload.</li>
+      <li>Or: <strong>File → Download → CSV</strong>, open in Notepad, copy all, paste below.</li>
+      <li>Or: Copy the OfficeRND export CSV directly and paste below.</li>
+    </ol>`;
+  }
+
+  panel.style.display = 'block';
+  panel.scrollIntoView({behavior:'smooth'});
+}
+
+function loadFromPaste() {
+  const raw = document.getElementById('pasteArea').value.trim();
+  if (!raw) { alert('Paste your CSV data first.'); return; }
+  try {
+    const rows = parseCSV(raw);
+    if (rows.length === 0) {
+      alert('No data rows parsed.\n\nMake sure you are pasting the full sheet data including the header row.\n\nTip: In Google Sheets, go to File → Download → CSV. Open that file in Notepad/TextEdit, select all, copy, then paste here.');
+      return;
+    }
+    const companies = processRaw(rows);
+    if (companies.length === 0) {
+      alert('Data loaded (' + rows.length + ' rows) but no PS memberships found within the current window (' + renewalWindowDays + ' days).\n\nTry changing the Window filter to 180 days or "All PS" to see further-out renewals.');
+    }
+    allCompanies = companies;
+    renderDashboard();
+    document.getElementById('lastUpdated').textContent = 'Pasted data · ' + rows.length + ' rows · ' + new Date().toLocaleTimeString();
+    document.getElementById('pastePanel').style.display = 'none';
+    switchTab('dashboard');
+  } catch(e) {
+    alert('Error parsing data: ' + e.message + '\n\nMake sure the data includes a header row and is plain text (CSV or tab-separated from Google Sheets).');
+    console.error('loadFromPaste error:', e);
+  }
+}
+
+function saveAndLoad() {
+  const raw = document.getElementById('sheetUrlInput').value.trim();
+  if (!raw) { alert('Please enter a Google Sheet URL.'); return; }
+  localStorage.setItem('csvUrl', raw);
+  csvUrl = raw;
+  // Show the resolved export URL for transparency
+  const resolved = parseSheetUrl(raw);
+  const hint = document.getElementById('resolvedUrl');
+  if (hint) hint.textContent = 'Fetching: ' + resolved;
+  reloadData();
+}
+
+// ─── WINDOW FILTER HANDLER ────────────────────────────────────────────────────
+function applyWindowFilter() {
+  renewalWindowDays = parseInt(document.getElementById('filterWindow').value) || 90;
+  renderDashboard();
+}
+
+// ─── RENDER DASHBOARD ─────────────────────────────────────────────────────────
+function resetFilters() {
+  document.getElementById('filterSearch').value = '';
+  document.getElementById('filterWindow').value = '90';
+  document.getElementById('filterOutlet').value = '';
+  document.getElementById('filterTier').value = '';
+  document.getElementById('filterFlag').value = '';
+  renewalWindowDays = 90;
+  renderDashboard();
+}
+
+// ─── OCCUPANCY HELPERS ────────────────────────────────────────────────────────
+function getOccupancyInfo(outletCode) {
+  const raw = OUTLET_OCCUPANCY[outletCode];
+  if (raw === undefined || raw === null || raw === '') return null;
+  const n = parseFloat(raw);
+  if (isNaN(n)) return null;
+  if (n > 85) return {
+    pct: n, level: 'high',
+    badge: `<span class="bdg bdg-occ-high">🏢 ${n}% Occupied</span>`,
+    advisory: `<div class="notice danger" style="margin-bottom:10px">🏢 <strong>High Occupancy (${n}%)</strong> — Outlet is near capacity. <strong>Prioritise retention</strong> — avoid rate hike; keeping this client is more valuable than squeezing margin.</div>`
+  };
+  if (n < 60) return {
+    pct: n, level: 'low',
+    badge: `<span class="bdg bdg-occ-low">🏢 ${n}% Occupied</span>`,
+    advisory: `<div class="notice warn" style="margin-bottom:10px">🏢 <strong>Low Occupancy (${n}%)</strong> — Outlet has vacancy. <strong>Secure the renewal</strong> — avoid aggressive uplift; retaining revenue is the priority over rate optimisation.</div>`
+  };
+  return {
+    pct: n, level: 'std',
+    badge: `<span class="bdg bdg-occ-std">🏢 ${n}% Occupied</span>`,
+    advisory: null // standard — no advisory needed
+  };
+}
+
+function saveOccupancy() {
+  const codes = Object.keys(OUTLET_NAMES).filter(c => c !== 'STO');
+  codes.forEach(code => {
+    const el = document.getElementById('occ_' + code);
+    if (el) {
+      const v = el.value.trim();
+      if (v !== '') OUTLET_OCCUPANCY[code] = parseFloat(v);
+      else delete OUTLET_OCCUPANCY[code];
+    }
+  });
+  localStorage.setItem('outletOccupancy', JSON.stringify(OUTLET_OCCUPANCY));
+  // Flash button
+  const btn = document.getElementById('btnSaveOcc');
+  if (btn) { btn.textContent = '✓ Saved'; btn.style.background='var(--ok)'; setTimeout(()=>{ btn.textContent='Save Occupancy'; btn.style.background=''; }, 2000); }
+  renderDashboard();
+}
+
+function loadOccupancySaved() {
+  try {
+    const saved = localStorage.getItem('outletOccupancy');
+    if (saved) OUTLET_OCCUPANCY = JSON.parse(saved);
+  } catch(e) {}
+  // Populate inputs if already on settings tab
+  Object.entries(OUTLET_OCCUPANCY).forEach(([code, val]) => {
+    const el = document.getElementById('occ_' + code);
+    if (el) el.value = val;
+  });
+}
+
+// ─── COPY CARD SUMMARY ────────────────────────────────────────────────────────
+function copyCardSummary(name, event) {
+  event.stopPropagation();
+  const c = allCompanies.find(c => c.name === name);
+  if (!c) return;
+  const actionable = c.memberships.filter(m => !m.isRenewed);
+  const soonestMem = actionable.length
+    ? actionable.reduce((best, m) => (!best || m.daysUntil < best.daysUntil) ? m : best, null)
+    : c.memberships.reduce((best, m) => (!best || m.daysUntil < best.daysUntil) ? m : best, null);
+
+  const outlet = soonestMem ? (soonestMem.outletCode || '') : '';
+  const suite = soonestMem?.roomName ? `Suite ${soonestMem.roomName}` : 'PS';
+  const dueDate = soonestMem?.endDateParsed ? formatDate(soonestMem.endDateParsed) : '—';
+  const baseOffer = soonestMem?.offers?.base?.rate ? formatRM(soonestMem.offers.base.rate) : (soonestMem?._missingRate ? 'Rate needed' : '—');
+  let noticeStr = '';
+  if (soonestMem?.notice) {
+    const n = soonestMem.notice;
+    noticeStr = ` | Notice: Cl.${n.clause} — ${n.daysToNotice <= 0 ? 'OVERDUE' : n.daysToNotice + 'd left'}`;
+  } else if (actionable.length === 0) {
+    noticeStr = ' | Renewed ✓';
+  }
+  const summary = `[${outlet}] ${suite} | Due: ${dueDate} | Base Offer: ${baseOffer}${noticeStr}`;
+
+  navigator.clipboard.writeText(summary).then(() => {
+    // Find and flash the button
+    const cards = document.querySelectorAll('.ccard');
+    cards.forEach(card => {
+      if (card.getAttribute('data-company') === name) {
+        const btn = card.querySelector('.btn-card-copy');
+        if (btn) {
+          btn.textContent = '✓ Copied';
+          btn.classList.add('ok');
+          setTimeout(() => { btn.textContent = '📋 Copy'; btn.classList.remove('ok'); }, 1800);
+        }
+      }
+    });
+  }).catch(() => {});
+}
+
+function renderDashboard() {
+  const filterSearch = (document.getElementById('filterSearch').value || '').trim().toLowerCase();
+  const filterOutlet = document.getElementById('filterOutlet').value;
+  const filterTier   = document.getElementById('filterTier').value;
+  const filterFlag   = document.getElementById('filterFlag').value;
+
+  // Step 1: window filter — at least one PS membership ending within window
+  let companies = allCompanies.filter(c =>
+    c.memberships.some(m => m.daysUntil <= renewalWindowDays)
+  );
+
+  // Step 1b: company name search
+  if (filterSearch) {
+    companies = companies.filter(c => c.name.toLowerCase().includes(filterSearch));
+  }
+
+  // Step 2: membership-level filters
+  companies = companies.map(c => {
+    const mems = c.memberships.filter(m => {
+      if (m.daysUntil > renewalWindowDays) return false;
+      if (filterOutlet && m.outletCode !== filterOutlet) return false;
+      if (filterTier && m.tier !== filterTier) return false;
+      if (filterFlag) {
+        if (filterFlag === 'escalate' && (m.isRenewed || !(m.promo || m.isKA))) return false;
+        if (filterFlag === 'promo' && !m.promo) return false;
+        if (filterFlag === 'keyaccount' && !m.isKA) return false;
+        if (filterFlag === 'notice_overdue' && !(m.notice && m.notice.daysToNotice <= 0)) return false;
+        if (filterFlag === 'notice_due' && !(m.notice && m.notice.daysToNotice > 0 && m.notice.daysToNotice <= 14)) return false;
+      }
+      return true;
+    });
+    return mems.length ? { ...c, memberships: mems } : null;
+  }).filter(Boolean);
+
+  const grid = document.getElementById('cardsGrid');
+  if (!companies.length) {
+    grid.innerHTML = `<div class="empty"><div style="font-size:48px;margin-bottom:12px">🔍</div><h3>No results</h3><p>No renewals match the current filters.</p></div>`;
+    updateStats([]);
+    return;
+  }
+
+  grid.innerHTML = companies.map(c => renderCompanyCard(c)).join('');
+  updateStats(companies);
+}
+
+function updateStats(companies) {
+  const allMems = companies.flatMap(c => c.memberships);
+  const actionableMems = allMems.filter(m => !m.isRenewed);
+  const noticeOverdue = actionableMems.filter(m => m.notice && m.notice.daysToNotice <= 0).length;
+  const noticeDueSoon = actionableMems.filter(m => m.notice && m.notice.daysToNotice > 0 && m.notice.daysToNotice <= 14).length;
+  const renewedCount = allMems.filter(m => m.isRenewed).length;
+  const total = companies.length;
+  const totalMRR = companies.reduce((s,c) => s + c.totalMRR, 0);
+  document.getElementById('fbarStats').innerHTML =
+    `<span class="stat-chip">${total} companies</span>` +
+    (totalMRR > 0 ? `<span class="stat-chip">MRR at risk: ${formatRM(totalMRR)}</span>` : '') +
+    (renewedCount ? `<span class="stat-chip" style="background:#DCFCE7;color:#14532D">✅ ${renewedCount} already renewed</span>` : '') +
+    (noticeOverdue ? `<span class="stat-chip red">🔴 ${noticeOverdue} notice overdue</span>` : '') +
+    (noticeDueSoon ? `<span class="stat-chip amber">🔔 ${noticeDueSoon} send notice ≤14d</span>` : '');
+}
+
+function renderCompanyCard(c) {
+  const actionable = c.memberships.filter(m => !m.isRenewed);
+  const allRenewed = actionable.length === 0;
+  const soonest = allRenewed
+    ? c.memberships.reduce((s,m) => m.daysUntil < s ? m.daysUntil : s, Infinity)
+    : actionable.reduce((s,m) => m.daysUntil < s ? m.daysUntil : s, Infinity);
+  const hasEscalate = actionable.some(m => m.promo || m.isKA);
+  const isOverdue = !allRenewed && soonest <= 0;
+  const borderClass = allRenewed ? 'c-ok' :
+    isOverdue ? 'c-overdue' :
+    soonest <= 30 ? 'c-danger' : soonest <= 60 ? 'c-warn' : hasEscalate ? 'c-escalate' : 'c-ok';
+
+  // Soonest renewal date (from actionable memberships)
+  const soonestMem = allRenewed
+    ? c.memberships.reduce((best, m) => (!best || m.daysUntil < best.daysUntil) ? m : best, null)
+    : actionable.reduce((best, m) => (!best || m.daysUntil < best.daysUntil) ? m : best, null);
+  const renewalDateStr = soonestMem?.endDateParsed ? formatDate(soonestMem.endDateParsed) : '—';
+
+  // Earliest notice send-by across actionable memberships
+  const noticeMs = actionable.filter(m => m.notice).map(m => m.notice);
+  const earliestNotice = noticeMs.sort((a,b) => a.daysToNotice - b.daysToNotice)[0] || null;
+
+  const daysText = allRenewed
+    ? `<span style="color:var(--ok)">Renewed ✓</span>`
+    : isOverdue ? `<span style="color:#7C3AED;font-weight:700">⚠ Overdue</span>`
+    : soonest <= 30 ? `<span class="red">${soonest} days</span>`
+    : soonest <= 60 ? `<span class="amber">${soonest} days</span>`
+    : `<span>${soonest} days</span>`;
+
+  // Dominant tier for card display
+  const tiers = c.memberships.map(m => m.tier).filter(Boolean);
+  const TIER_RANK = {LONG_TERM_GROWTH:0, LOYALTY:1, SHORT_TERM_GROWTH:2, NORMAL:3};
+  const topTier = tiers.length ? tiers.sort((a,b) => TIER_RANK[a] - TIER_RANK[b])[0] : null;
+
+  // Aggregate badges — renewed memberships get ✅ badge; suppress action badges for them
+  const badges = [];
+  if (c.memberships.some(m => m.isRenewed))
+    badges.push(`<span class="bdg bdg-renewed">✅ Renewed (${c.memberships.filter(m=>m.isRenewed).length} suite${c.memberships.filter(m=>m.isRenewed).length>1?'s':''})</span>`);
+  if (c.memberships.some(m => m.tier === 'LONG_TERM_GROWTH' || m.tier === 'LOYALTY'))
+    badges.push('<span class="bdg bdg-gold">🏆 Gold Member</span>');
+  if (c.memberships.some(m => m.tier === 'LONG_TERM_GROWTH' || m.tier === 'SHORT_TERM_GROWTH'))
+    badges.push('<span class="bdg bdg-growth">📈 Growth</span>');
+  if (c.isKA)
+    badges.push('<span class="bdg bdg-ka">⭐ Key Account</span>');
+  if (actionable.some(m => m.gp === true))
+    badges.push('<span class="bdg bdg-gp">🟢 Good Paymaster</span>');
+  if (actionable.some(m => m.gp === false))
+    badges.push('<span class="bdg bdg-bp">🔴 Missed Payments</span>');
+  if (actionable.some(m => m.gp === null))
+    badges.push('<span class="bdg bdg-na">💳 Paymaster N/A</span>');
+  if (actionable.some(m => m.promo))
+    badges.push('<span class="bdg bdg-promo">⚠️ Promo Rate</span>');
+  if (actionable.some(m => m._missingRate))
+    badges.push('<span class="bdg bdg-na">📝 Rate needed</span>');
+  if (hasEscalate && !actionable.every(m => m._missingRate))
+    badges.push('<span class="bdg bdg-esc">🚨 Escalate</span>');
+  // Notice badges — only for non-renewed memberships
+  actionable.forEach(m => {
+    if (!m.notice) return;
+    if (m.notice.daysToNotice <= 0)
+      badges.push(`<span class="bdg bdg-overdue">🔴 Notice Overdue (Cl.${m.notice.clause})</span>`);
+    else if (m.notice.daysToNotice <= 14)
+      badges.push(`<span class="bdg bdg-notice">🔔 Send Notice in ${m.notice.daysToNotice}d (Cl.${m.notice.clause})</span>`);
+  });
+
+  const outletNames = [...new Set(c.memberships.map(m => OUTLET_NAMES[m.outletCode] || m.outletCode))].join(', ');
+  const memCount = c.memberships.length;
+
+  // Occupancy badge — use soonest actionable membership's outlet
+  const soonestOutlet = soonestMem?.outletCode || c.memberships[0]?.outletCode;
+  const occInfo = soonestOutlet ? getOccupancyInfo(soonestOutlet) : null;
+  if (occInfo) badges.push(occInfo.badge);
+
+  return `<div class="ccard ${borderClass}" data-company="${esc(c.name)}" onclick="openCompany('${esc(c.name)}')">
+    <div class="ch">
+      <div class="ch-top">
+        <div class="ch-name">${esc(c.name)}</div>
+        <div class="ch-tier">
+          ${topTier ? `<span class="tier ${TIER_CSS[topTier]}">${TIER_LABEL[topTier]}</span>` : `<span class="tier" style="background:var(--g200);color:var(--g700)">PS</span>`}
+        </div>
+      </div>
+      <div class="ch-meta">
+        <span>📍 ${outletNames}</span>
+        <span>📋 ${memCount} contract${memCount>1?'s':''}</span>
+        <span>👥 ${c.memberships.reduce((s,m)=>s+(parseInt(m.pax)||0),0)} pax total</span>
+      </div>
+    </div>
+    <div class="cb">
+      <div class="crow">
+        <span class="crow-lbl">Renewal Date</span>
+        <span class="crow-val">${renewalDateStr} <span style="font-size:11px;font-weight:400;color:var(--g500)">(${daysText})</span></span>
+      </div>
+      ${earliestNotice ? `<div class="crow">
+        <span class="crow-lbl">Notice Send By</span>
+        <span class="crow-val ${earliestNotice.daysToNotice <= 0 ? 'red' : earliestNotice.daysToNotice <= 14 ? 'amber' : ''}" style="font-size:12px">
+          ${formatDate(earliestNotice.noticeSendBy)} <span style="font-size:10px;font-weight:400">(Cl.${earliestNotice.clause}${earliestNotice.daysToNotice <= 0 ? ' — OVERDUE' : earliestNotice.daysToNotice <= 14 ? ` — ${earliestNotice.daysToNotice}d left` : ''})</span>
+        </span>
+      </div>` : ''}
+      <div class="crow"><span class="crow-lbl">Total MRR</span><span class="crow-val ${c.totalMRR > 0 ? 'green' : ''}">${c.totalMRR > 0 ? formatRM(c.totalMRR) : '<span style="color:var(--g500);font-style:italic">Enter rate to calculate</span>'}</span></div>
+      ${c.isKA ? `<div class="crow"><span class="crow-lbl">Key Account</span><span class="crow-val green">⭐ ${formatRM(c.totalMRR)}</span></div>` : ''}
+    </div>
+    <div class="cbadges">${badges.join('')}</div>
+    <button class="btn-card-copy" onclick="copyCardSummary('${esc(c.name)}',event)" title="Copy one-liner summary to clipboard">📋 Copy</button>
+  </div>`;
+}
+
+// ─── COMPANY DETAIL MODAL ─────────────────────────────────────────────────────
+function openCompany(name) {
+  const c = allCompanies.find(c => c.name === name);
+  if (!c) return;
+
+  document.getElementById('modalTitle').textContent = c.name;
+  document.getElementById('modalSub').textContent =
+    `${c.memberships.length} membership${c.memberships.length>1?'s':''} · Total MRR: ${formatRM(c.totalMRR)}${c.isKA ? ' · ⭐ Key Account' : ''}`;
+
+  // Build membership tabs if >1
+  let tabsHTML = '', panelsHTML = '';
+  c.memberships.forEach((m, idx) => {
+    const label = `${OUTLET_NAMES[m.outletCode]||m.outletCode} ${m.roomName ? '· '+m.roomName : ''} · ${formatDate(m.endDateParsed)}`;
+    tabsHTML += `<button class="mem-tab${idx===0?' active':''}" onclick="switchMemTab(${idx})">${label}</button>`;
+    panelsHTML += `<div class="mem-panel${idx===0?' active':''}" id="memPanel-${idx}">${renderMembership(m, c.isKA, idx)}</div>`;
+  });
+
+  document.getElementById('modalBody').innerHTML =
+    (c.memberships.length > 1 ? `<div class="mem-tabs">${tabsHTML}</div>` : '') + panelsHTML;
+
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function switchMemTab(idx) {
+  document.querySelectorAll('.mem-tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+  document.querySelectorAll('.mem-panel').forEach((p,i) => p.classList.toggle('active', i===idx));
+}
+
+function renderMembership(m, isKA, idx) {
+  // Already renewed — show status banner, suppress pricing actions
+  if (m.isRenewed) {
+    return renderMembershipRenewed(m);
+  }
+  // If rate is missing (Join/Leave sheet), show data-entry state
+  if (m._missingRate) {
+    return renderMembershipDataEntry(m, isKA, idx);
+  }
+
+  const { base, alt, currentEffective, promo } = m.offers;
+  const tenure = getTenureMonths(m);
+  const startDate = parseDate(m.startDate);
+  const endDate = parseDate(m.endDate);
+  const tenureYrsText = (() => {
+    const yrs = Math.floor(tenure/12); const mos = tenure%12;
+    return (yrs ? yrs+'y ' : '') + (mos ? mos+'m' : '');
+  })();
+
+  // Notice period clause block
+  let noticePeriodHTML = '';
+  if (m.notice) {
+    const np = m.notice;
+    const clauseColor = np.daysToNotice <= 0 ? 'danger' : np.daysToNotice <= 14 ? 'warn' : 'info';
+    const clauseIcon = np.daysToNotice <= 0 ? '🔴' : np.daysToNotice <= 14 ? '🔔' : '📋';
+    const sendByText = np.daysToNotice <= 0
+      ? `<strong>OVERDUE</strong> — should have been sent by ${formatDate(np.noticeSendBy)}`
+      : `Send by <strong>${formatDate(np.noticeSendBy)}</strong> (${np.daysToNotice} days left)`;
+    noticePeriodHTML = `<div class="notice ${clauseColor}" style="margin-bottom:10px">
+      ${clauseIcon} <strong>Clause ${np.clause} — ${np.noticePeriodMonths}-Month Notice</strong> &nbsp;·&nbsp; ${sendByText}
+      &nbsp;<span style="font-size:11px;opacity:.75">(Tenure: ${np.tenureMonths}mo, ${np.remainingMonths}mo remaining → Cl.${np.clause} = ${np.noticePeriodMonths}mo notice)</span>
+    </div>`;
+  }
+
+  // Renewal date banner
+  let noticeBanner = '';
+  if (m.daysUntil <= 0) noticeBanner = `<div class="notice danger">🔴 Renewal date has passed — immediate action required.</div>`;
+  else if (m.daysUntil <= 30) noticeBanner = `<div class="notice danger">🚨 Renewal in ${m.daysUntil} days — send MA now if not done.</div>`;
+  else if (m.daysUntil <= 60) noticeBanner = `<div class="notice warn">📅 Renewal in ${m.daysUntil} days.</div>`;
+  else noticeBanner = `<div class="notice info">📅 Renewal in ${m.daysUntil} days.</div>`;
+
+  // Occupancy advisory
+  const occAdvisory = getOccupancyInfo(m.outletCode)?.advisory || '';
+
+  // Promo notice
+  const promoNote = promo ? `<div class="promo-notice">⚠️ <strong>Promo Rate Detected</strong> — This member is on a discounted or free-month contract. Renewal logic maintains nominal rate and removes free months. AM must approve before sending.</div>` : '';
+
+  // Missing data check
+  let missingHTML = '';
+  const missing = [];
+  if (!m.roomType || m.roomType === '') missing.push('roomType');
+  if (m.freeMonthsCurrent === '' || m.freeMonthsCurrent === null || m.freeMonthsCurrent === undefined) missing.push('freeMonths');
+  if (missing.length) {
+    missingHTML = `<div class="missing-box"><h4>⚠️ Missing data — please fill in to get accurate pricing</h4>
+      <div class="mfields">
+        ${missing.includes('roomType') ? `<div class="mf"><label>Room Type</label><select onchange="updateMissingData('${idx}','roomType',this.value)"><option>Non-Window</option><option>Window</option></select></div>` : ''}
+        ${missing.includes('freeMonths') ? `<div class="mf"><label>Free Months (current contract)</label><input type="number" step="0.5" min="0" placeholder="0" onchange="updateMissingData('${idx}','freeMonthsCurrent',this.value)"></div>` : ''}
+      </div></div>`;
+  }
+
+  // Contract summary
+  const csHTML = `<div class="csummary">
+    <div class="cs-item"><label>Outlet</label><div class="cv">${OUTLET_NAMES[m.outletCode]||m.outletCode}</div></div>
+    <div class="cs-item"><label>Room</label><div class="cv">${m.roomName||'—'} · ${m.roomType||'—'}</div></div>
+    <div class="cs-item"><label>Pax</label><div class="cv">${m.pax}</div></div>
+    <div class="cs-item"><label>Tenure</label><div class="cv">${tenureYrsText} (${tenure}mo)</div></div>
+    <div class="cs-item"><label>Renewal Date</label><div class="cv accent">${formatDate(endDate)}</div></div>
+    ${m.notice ? `<div class="cs-item"><label>Notice Send By</label><div class="cv ${m.notice.daysToNotice <= 0 ? 'red' : m.notice.daysToNotice <= 14 ? 'amber' : ''}" style="color:${m.notice.daysToNotice <= 0 ? 'var(--danger)' : m.notice.daysToNotice <= 14 ? '#D97706' : 'var(--ok)'}">${formatDate(m.notice.noticeSendBy)} <span style="font-size:11px;font-weight:400">(Cl.${m.notice.clause})</span></div></div>` : ''}
+    <div class="cs-item"><label>Current Rate ex-SST</label><div class="cv">${formatRM(parseFloat(m.monthlyRateExSST))}</div></div>
+    <div class="cs-item"><label>Current Rate incl. SST</label><div class="cv">${formatRM(parseFloat(m.monthlyRateExSST)*(1+SST))}</div></div>
+    <div class="cs-item"><label>Current Effective Rate</label><div class="cv accent">${formatRM(currentEffective)}/mo</div></div>
+    ${parseFloat(m.freeMonthsCurrent)>0 ? `<div class="cs-item"><label>Free Months (current)</label><div class="cv">${fmtFreeMonths(parseFloat(m.freeMonthsCurrent))}</div></div>` : ''}
+    <div class="cs-item"><label>Current MRR</label><div class="cv">${formatRM(parseFloat(m.currentMRR)||parseFloat(m.monthlyRateExSST))}</div></div>
+    ${m.mrrBenchmark ? `<div class="cs-item"><label>MRR 24mo Ago</label><div class="cv">${formatRM(parseFloat(m.mrrBenchmark))}</div></div>` : ''}
+    <div class="cs-item"><label>AM / PIC</label><div class="cv">${m.amName||'—'}</div></div>
+  </div>`;
+
+  // Tier badge row
+  const tierBadges = `<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+    <span class="tier ${TIER_CSS[m.tier]}">${TIER_LABEL[m.tier]}</span>
+    ${isKA ? '<span class="bdg bdg-ka">⭐ Key Account</span>' : ''}
+    ${(m.tier==='LONG_TERM_GROWTH'||m.tier==='LOYALTY') ? '<span class="bdg bdg-gold">🏆 Gold Member</span>' : ''}
+    ${(m.tier==='LONG_TERM_GROWTH'||m.tier==='SHORT_TERM_GROWTH') ? '<span class="bdg bdg-growth">📈 Growth</span>' : ''}
+    ${m.gp===true ? '<span class="bdg bdg-gp">🟢 Good Paymaster</span>' : m.gp===false ? '<span class="bdg bdg-bp">🔴 Missed Payments</span>' : '<span class="bdg bdg-na">💳 Paymaster N/A</span>'}
+    ${promo ? '<span class="bdg bdg-promo">⚠️ Promo Rate</span>' : ''}
+  </div>`;
+
+  // Gold member perks
+  let perksHTML = '';
+  if (m.tier === 'LONG_TERM_GROWTH' || m.tier === 'LOYALTY') {
+    perksHTML = `<div class="perks-box"><div class="perks-title">🏆 WORQ Gold Member Perks (inform client)</div>
+      <div class="perks-list">
+        <span class="perk">5% off IT upgrades & workspace add-ons</span>
+        <span class="perk">All Access complimentary for full team</span>
+        <span class="perk">300 bonus meeting room credits/month</span>
+        <span class="perk">Special renewal terms via outlet AM</span>
+      </div></div>`;
+  }
+
+  // Offers
+  const offersHTML = renderOffers(base, alt, m, idx);
+
+  // Bottom grid: WORQ Points + Deposit
+  const pts = m.worqPts;
+  const baseDep = base.deposit;
+  const altDep = alt ? alt.deposit : null;
+  const bottomHTML = `<div class="bottom-grid">
+    <div class="ibox">
+      <div class="ibox-title">WORQ Points / Credits</div>
+      <div class="irow"><label>Standard (${m.pax} pax × RM200, max RM2,000)</label><span>${formatRM(pts.standard)}</span></div>
+      ${pts.bonus ? `<div class="irow"><label>Gold Member Bonus</label><span class="green">+${formatRM(pts.bonus)}</span></div>` : ''}
+      ${isKA ? `<div class="irow"><label>Key Account (no bonus)</label><span>—</span></div>` : ''}
+      <div class="irow" style="border-top:1px solid var(--g200);padding-top:6px;margin-top:4px"><label><strong>Total Monthly Credits</strong></label><span class="accent"><strong>${formatRM(pts.total)}</strong></span></div>
+      <div class="irow" style="margin-top:4px"><label style="font-size:11px;color:var(--g500)">Ongoing monthly, not one-time</label><span></span></div>
+    </div>
+    <div class="ibox">
+      <div class="ibox-title">Deposit</div>
+      <div class="irow"><label>Currently Held</label><span>${formatRM(baseDep.held)}</span></div>
+      <div class="irow"><label>Required (${baseDep.months}mo × full price)</label><span>${formatRM(baseDep.required)}</span></div>
+      <div class="irow"><label>Top-up Required</label><span class="${baseDep.topup>0?'amber':''}">${baseDep.topup>0?'Client pays '+formatRM(baseDep.topup):'No top-up required'}</span></div>
+      ${altDep ? `<div class="irow"><label>Alt Required (${altDep.months}mo × full price)</label><span>${formatRM(altDep.required)}</span></div>` : ''}
+      ${altDep ? `<div class="irow"><label>Alt Top-up</label><span class="${altDep.topup>0?'amber':''}">${altDep.topup>0?'Client pays '+formatRM(altDep.topup):'No top-up required'}</span></div>` : ''}
+    </div>
+  </div>`;
+
+  // Email generator
+  const emailHTML = renderEmailSection(m, isKA, base, alt, pts, baseDep, altDep, idx);
+
+  return noticePeriodHTML + noticeBanner + occAdvisory + promoNote + missingHTML + csHTML + tierBadges + perksHTML + offersHTML + bottomHTML + emailHTML;
+}
+
+// ─── RENEWED VIEW ────────────────────────────────────────────────────────────
+function renderMembershipRenewed(m) {
+  const endDate = parseDate(m.endDate);
+  const startDate = parseDate(m.startDate);
+  const rate = parseFloat(m.monthlyRateExSST) || parseFloat(m.currentMRR) || 0;
+  return `
+    <div class="notice ok" style="background:#DCFCE7;border-color:#86EFAC;color:#14532D;margin-bottom:12px">
+      ✅ <strong>Already Renewed</strong> — A future contract exists for this suite. No action needed.
+    </div>
+    <div class="csummary">
+      <div class="cs-item"><label>Outlet</label><div class="cv">${OUTLET_NAMES[m.outletCode]||m.outletCode}</div></div>
+      ${m.roomName ? `<div class="cs-item"><label>Suite / Room</label><div class="cv">${esc(m.roomName)}</div></div>` : ''}
+      <div class="cs-item"><label>Pax</label><div class="cv">${m.pax||'—'}</div></div>
+      <div class="cs-item"><label>Contract Start</label><div class="cv">${formatDate(startDate)}</div></div>
+      <div class="cs-item"><label>Contract End</label><div class="cv">${formatDate(endDate)}</div></div>
+      ${rate > 0 ? `<div class="cs-item"><label>Current Rate (ex-SST)</label><div class="cv">${formatRM(rate)}</div></div>` : ''}
+      ${m.depositHeld && parseFloat(m.depositHeld) > 0 ? `<div class="cs-item"><label>Deposit Held</label><div class="cv">${formatRM(parseFloat(m.depositHeld))}</div></div>` : ''}
+    </div>
+  `;
+}
+
+// ─── DATA ENTRY VIEW (for Join/Leave sheet rows with missing rate) ─────────────
+function renderMembershipDataEntry(m, isKA, idx) {
+  const endDate = parseDate(m.endDate);
+  const startDate = parseDate(m.startDate);
+  let noticePeriodHTML = '';
+  if (m.notice) {
+    const np = m.notice;
+    const clauseColor = np.daysToNotice <= 0 ? 'danger' : np.daysToNotice <= 14 ? 'warn' : 'info';
+    const sendByText = np.daysToNotice <= 0
+      ? `<strong>OVERDUE</strong> — should have been sent by ${formatDate(np.noticeSendBy)}`
+      : `Send by <strong>${formatDate(np.noticeSendBy)}</strong> (${np.daysToNotice}d left)`;
+    noticePeriodHTML = `<div class="notice ${clauseColor}">📋 <strong>Clause ${np.clause} — ${np.noticePeriodMonths}-Month Notice</strong> &nbsp;·&nbsp; ${sendByText}</div>`;
+  }
+  let noticeBanner = '';
+  if (m.daysUntil <= 0) noticeBanner = `<div class="notice danger">🔴 Renewal date has passed — immediate action required.</div>`;
+  else if (m.daysUntil <= 30) noticeBanner = `<div class="notice danger">🚨 Renewal in ${m.daysUntil} days.</div>`;
+  else if (m.daysUntil <= 60) noticeBanner = `<div class="notice warn">📅 Renewal in ${m.daysUntil} days.</div>`;
+  else noticeBanner = `<div class="notice info">📅 Renewal in ${m.daysUntil} days.</div>`;
+
+  const tenure = startDate && endDate ? Math.max(1, monthsBetween(startDate, endDate)) : null;
+  const tenureText = tenure ? (() => { const y=Math.floor(tenure/12),mo=tenure%12; return (y?y+'y ':'')+mo+'m'; })() : 'Unknown';
+
+  return `
+  ${noticePeriodHTML}
+  ${noticeBanner}
+  <div class="missing-box" style="margin-bottom:16px">
+    <h4>📝 Rate data not in sheet — enter below to calculate pricing</h4>
+    <p style="font-size:12px;color:var(--g500);margin-top:4px">This record came from the Join/Leave sheet. Financial fields not available. Fill in what you know, then click Recalculate.</p>
+    <div class="mfields" style="margin-top:12px">
+      <div class="mf"><label>Monthly Rate ex-SST (RM)</label><input type="number" id="inp_rate_${idx}" placeholder="e.g. 12500" style="font-size:14px;font-weight:600"></div>
+      <div class="mf"><label>Free Months (current contract)</label><input type="number" step="0.5" min="0" id="inp_fm_${idx}" placeholder="0"></div>
+      <div class="mf"><label>Room Type</label><select id="inp_rt_${idx}"><option>Non-Window</option><option>Window</option></select></div>
+      <div class="mf"><label>Good Paymaster</label><select id="inp_gp_${idx}"><option value="">Unknown</option><option value="Y">Y — No missed payments</option><option value="N">N — Has missed payments</option></select></div>
+      <div class="mf"><label>MRR Benchmark (24mo ago, RM)</label><input type="number" id="inp_bench_${idx}" placeholder="Leave blank if unknown"></div>
+      <div class="mf"><label>Deposit Held ex-SST (RM)</label><input type="number" id="inp_dep_${idx}" placeholder="0"></div>
+    </div>
+    <button class="btn-pri" style="margin-top:12px" onclick="applyDataEntry(${idx})">Recalculate Pricing</button>
+  </div>
+  <div class="csummary">
+    <div class="cs-item"><label>Outlet</label><div class="cv">${OUTLET_NAMES[m.outletCode]||m.outletCode}</div></div>
+    <div class="cs-item"><label>Pax</label><div class="cv">${m.pax}</div></div>
+    <div class="cs-item"><label>Renewal Date</label><div class="cv accent">${formatDate(endDate)}</div></div>
+    <div class="cs-item"><label>Tenure</label><div class="cv">${tenureText}</div></div>
+    ${m.startDate ? `<div class="cs-item"><label>Start Date</label><div class="cv">${formatDate(startDate)}</div></div>` : ''}
+    ${m.notes ? `<div class="cs-item"><label>Notes</label><div class="cv">${esc(m.notes)}</div></div>` : ''}
+  </div>`;
+}
+
+function applyDataEntry(idx) {
+  // Find the membership by index across all companies
+  let target = null;
+  allCompanies.forEach(c => c.memberships.forEach(m => { if (m._deIdx === idx) target = m; }));
+  if (!target) {
+    // fallback: idx is sequential across all memberships
+    let count = 0;
+    allCompanies.forEach(c => c.memberships.forEach(m => { if (count++ === idx) target = m; }));
+  }
+  if (!target) return;
+
+  const rate = parseFloat(document.getElementById('inp_rate_'+idx)?.value) || 0;
+  const fm = parseFloat(document.getElementById('inp_fm_'+idx)?.value) || 0;
+  const rt = document.getElementById('inp_rt_'+idx)?.value || 'Non-Window';
+  const gp = document.getElementById('inp_gp_'+idx)?.value || '';
+  const bench = document.getElementById('inp_bench_'+idx)?.value || '';
+  const dep = parseFloat(document.getElementById('inp_dep_'+idx)?.value) || 0;
+
+  if (!rate) { alert('Please enter the monthly rate to calculate pricing.'); return; }
+
+  target.monthlyRateExSST = String(rate);
+  target.currentMRR = String(rate);
+  target.freeMonthsCurrent = String(fm);
+  target.roomType = rt;
+  target.goodPaymaster = gp;
+  target.mrrBenchmark = bench;
+  target.depositHeld = String(dep);
+  target._missingRate = false;
+
+  // Recompute
+  const tier = detectTier(target);
+  const gpFlag = isGoodPaymaster(target);
+  target.tier = tier;
+  target.gp = gpFlag;
+  target.promo = isPromo(target);
+  target.offers = computeOffers(target, tier, gpFlag);
+
+  // Find parent company and refresh KA
+  const parentCompany = allCompanies.find(c => c.memberships.includes(target));
+  if (parentCompany) {
+    parentCompany.totalMRR = parentCompany.memberships.reduce((s,mm) => s + (parseFloat(mm.currentMRR)||0), 0);
+    parentCompany.isKA = parentCompany.totalMRR >= KA_THRESHOLD;
+    target.isKA = parentCompany.isKA;
+  }
+
+  // Re-open modal to refresh
+  openCompany(target.companyName);
+}
+
+function renderOffers(base, alt, m, idx) {
+  const baseCard = renderOfferCard(base, m, false, false);
+  const altCard = alt ? renderOfferCard(alt, m, true, false) : `<div class="ocard" style="display:flex;align-items:center;justify-content:center;padding:30px;color:var(--g500);font-size:13px;text-align:center">
+    <div>
+      <div style="font-size:24px;margin-bottom:8px">🔒</div>
+      <div>Alternative Offer suppressed</div>
+      <div style="font-size:12px;margin-top:4px">Extended tenure with free months would result in<br>effective rate below current — cap rule applied.</div>
+    </div>
+  </div>`;
+  return `<div class="offers-grid${!alt?' solo':''}">
+    ${baseCard}${alt ? altCard : (m.tier === 'LONG_TERM_GROWTH' ? altCard : altCard)}
+  </div>`;
+}
+
+function renderOfferCard(offer, m, isAlt, _) {
+  const fmTag = offer.freeMonths ? `<div class="free-tag">🎁 ${fmtFreeMonths(offer.freeMonths)}</div>` : '';
+  const upliftStr = offer.upliftPct === 0 ? 'Same rate' :
+    '+' + (offer.upliftPct * 100).toFixed(1) + '% uplift';
+  const effChg = offer.effChangePct;
+  const effStr = effChg === 0 ? '' : (effChg > 0 ? `<span class="pct-change pct-up">↑${(effChg*100).toFixed(1)}% effective</span>` : `<span class="pct-change pct-down">↓${Math.abs(effChg*100).toFixed(1)}% effective</span>`);
+  return `<div class="ocard${isAlt?' rec':''}">
+    <div class="ohead">
+      <div class="otitle">${isAlt ? '🔁 Alternative Offer — Extended Tenure' : '📋 Base Offer — Same Tenure'}</div>
+      ${isAlt ? '<span class="orec-badge">Recommended</span>' : ''}
+    </div>
+    <div class="obody">
+      ${fmTag}
+      ${offer.promo && !isAlt ? `<div style="font-size:12px;color:#92400E;background:var(--warn-l);padding:6px 10px;border-radius:6px;margin-bottom:10px">Rate maintained · free months removed</div>` : ''}
+      ${offer.promo && isAlt ? `<div style="font-size:12px;color:#92400E;background:var(--warn-l);padding:6px 10px;border-radius:6px;margin-bottom:10px">Rate maintained · new free months per tier</div>` : ''}
+      <div class="orow"><label>Tenure</label><div class="oamt">${offer.tenureMonths} months</div></div>
+      <div class="orow"><label>Monthly Rate (ex-SST)</label><div class="oamt big">${formatRM(offer.rate)}</div></div>
+      <div class="orow"><label>Monthly Rate (incl. 8% SST)</label><div class="oamt">${formatRM(offer.rateInclSST)}</div></div>
+      <hr class="odiv">
+      <div class="orow"><label>Effective Rate / month</label><div class="oamt">${formatRM(offer.effectiveRate)} ${effStr}</div></div>
+      <div class="orow"><label>Rate Change</label><div class="oamt sub">${upliftStr}</div></div>
+    </div>
+  </div>`;
+}
+
+// ─── EMAIL GENERATOR ──────────────────────────────────────────────────────────
+function renderEmailSection(m, isKA, base, alt, pts, baseDep, altDep, idx) {
+  const offerOpts = alt ?
+    `<button class="ebtn active" id="ebtn-base-${idx}" onclick="selectEmailOffer('base',${idx})">Base Offer</button>
+     <button class="ebtn" id="ebtn-alt-${idx}" onclick="selectEmailOffer('alt',${idx})">Alternative Offer</button>
+     <button class="ebtn" id="ebtn-both-${idx}" onclick="selectEmailOffer('both',${idx})">Both Offers</button>` :
+    `<button class="ebtn active" id="ebtn-base-${idx}">Base Offer Only</button>`;
+
+  const emailText = generateEmail(m, isKA, base, alt, pts, baseDep, altDep, 'base');
+  return `<div>
+    <div class="esec-title">✉️ Renewal Email Draft <span style="font-size:11px;font-weight:400;color:var(--g500)">— select offer to include</span></div>
+    <div class="ebtns" id="ebtns-${idx}">${offerOpts}</div>
+    <div class="eprev" id="eprev-${idx}">${esc(emailText)}</div>
+    <button class="btn-copy" id="bcopy-${idx}" onclick="copyEmail(${idx})">Copy to Clipboard</button>
+  </div>`;
+}
+
+function selectEmailOffer(type, idx) {
+  // Update button states
+  ['base','alt','both'].forEach(t => {
+    const b = document.getElementById(`ebtn-${t}-${idx}`);
+    if (b) b.classList.toggle('active', t===type);
+  });
+  // Find membership data
+  const allMems = allCompanies.flatMap(c => c.memberships);
+  // We need to find by index within modal — use stored data
+  const eprev = document.getElementById(`eprev-${idx}`);
+  if (!eprev) return;
+  // Re-generate — grab from panel
+  const panel = document.getElementById(`memPanel-${idx}`);
+  if (!panel) return;
+  // Regenerate using stored window data
+  if (window._modalCompany) {
+    const m = window._modalCompany.memberships[idx];
+    const { base, alt } = m.offers;
+    const pts = m.worqPts;
+    const baseDep = base.deposit;
+    const altDep = alt ? alt.deposit : null;
+    const text = generateEmail(m, window._modalCompany.isKA, base, alt, pts, baseDep, altDep, type);
+    eprev.textContent = text;
+  }
+}
+
+function copyEmail(idx) {
+  const eprev = document.getElementById(`eprev-${idx}`);
+  if (!eprev) return;
+  navigator.clipboard.writeText(eprev.textContent).then(() => {
+    const btn = document.getElementById(`bcopy-${idx}`);
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'Copy to Clipboard'; btn.classList.remove('ok'); }, 2000);
+  });
+}
+
+function generateEmail(m, isKA, base, alt, pts, baseDep, altDep, offerType) {
+  const co = m.companyName;
+  const outlet = OUTLET_NAMES[m.outletCode] || m.outletCode;
+  const renewalDate = formatDate(m.endDateParsed);
+  const am = m.amName || 'the WORQ team';
+  const isGold = m.tier === 'LONG_TERM_GROWTH' || m.tier === 'LOYALTY';
+  const isLongStanding = m.tier === 'LONG_TERM_GROWTH' || m.tier === 'LOYALTY';
+  const memberDesc = isLongStanding ? 'long-standing' : 'valued';
+  const suiteRef = m.roomName ? `Suite ${m.roomName}` : 'your Private Suite';
+  const subject = `Private Suite Renewal — WORQ ${outlet} | Due: ${renewalDate}`;
+
+  let offerSection = '';
+
+  if (offerType === 'base' || offerType === 'both') {
+    offerSection += `
+OPTION ${offerType==='both'?'A: ':''} BASE RENEWAL — ${base.tenureMonths}-Month Tenure
+• Monthly Rate: ${formatRM(base.rate)} excl. SST / ${formatRM(base.rateInclSST)} incl. SST (8%)
+• Tenure: ${base.tenureMonths} months
+• Effective Monthly Rate: ${formatRM(base.effectiveRate)}
+${base.promo ? '• Note: Rate maintained from current contract; free months removed (reflects nett increase in effective rate)' : ''}
+${baseDep.topup > 0 ? `• Deposit Top-up Required: ${formatRM(baseDep.topup)} excl. SST` : '• Deposit: No top-up required'}`;
+  }
+
+  if ((offerType === 'alt' || offerType === 'both') && alt) {
+    offerSection += `
+
+OPTION ${offerType==='both'?'B: ':''}EXTENDED TENURE — ${alt.tenureMonths}-Month Tenure${alt.freeMonths ? ` (incl. ${fmtFreeMonths(alt.freeMonths)})` : ''}
+• Monthly Rate: ${formatRM(alt.rate)} excl. SST / ${formatRM(alt.rateInclSST)} incl. SST (8%)
+• Tenure: ${alt.tenureMonths} months${alt.freeMonths ? `\n• Complimentary Period: ${fmtFreeMonths(alt.freeMonths)}` : ''}
+• Effective Monthly Rate: ${formatRM(alt.effectiveRate)}
+${altDep && altDep.topup > 0 ? `• Deposit Top-up Required: ${formatRM(altDep.topup)} excl. SST` : altDep ? '• Deposit: No top-up required' : ''}`;
+  }
+
+  const goldSection = isGold ? `
+
+WORQ GOLD MEMBER BENEFITS
+As a valued WORQ Gold Member, you continue to enjoy:
+• 5% discount on IT upgrades and workspace add-ons
+• All Access membership complimentary for your entire team
+• 300 bonus meeting room credits monthly (ongoing)
+` : '';
+
+  return `Subject: ${subject}
+
+---
+
+Dear Team at ${co},
+
+Re: ${suiteRef} Renewal — WORQ ${outlet} | Due: ${renewalDate}
+
+We hope this message finds you well. As your current agreement for ${suiteRef} at WORQ ${outlet} is approaching its renewal date on ${renewalDate}, we are pleased to present your renewal offer as a ${memberDesc} member.
+
+────────────────────────────────────────
+${offerSection}
+────────────────────────────────────────
+
+WORQ POINTS / MEETING ROOM CREDITS
+Upon renewal, you will receive ${formatRM(pts.total)} in WORQ credits monthly:
+• Standard allocation: ${formatRM(pts.standard)} (${m.pax} pax × RM200${pts.standard === 2000 ? ', capped at RM2,000' : ''})${pts.bonus ? `\n• Gold Member bonus: +${formatRM(pts.bonus)}/month` : ''}
+${goldSection}
+To proceed, please confirm your preferred option and we will prepare the Membership Agreement accordingly.
+
+Please do not hesitate to reach out should you have any questions or if you would like to discuss the terms further.`;
+}
+
+// ─── MODAL HELPERS ────────────────────────────────────────────────────────────
+function openCompany(name) {
+  const c = allCompanies.find(c => c.name === name);
+  if (!c) return;
+  window._modalCompany = c;
+
+  document.getElementById('modalTitle').textContent = c.name;
+  document.getElementById('modalSub').textContent =
+    `${c.memberships.length} membership${c.memberships.length>1?'s':''} · Total MRR: ${formatRM(c.totalMRR)}${c.isKA ? ' · ⭐ Key Account' : ''}`;
+
+  let tabsHTML = '', panelsHTML = '';
+  c.memberships.forEach((m, idx) => {
+    const d = parseDate(m.endDate);
+    const lbl = `${OUTLET_NAMES[m.outletCode]||m.outletCode}${m.roomName?' · '+m.roomName:''} · ${formatDate(d)}`;
+    tabsHTML += `<button class="mem-tab${idx===0?' active':''}" onclick="switchMemTab(${idx})">${lbl}</button>`;
+    panelsHTML += `<div class="mem-panel${idx===0?' active':''}" id="memPanel-${idx}">${renderMembership(m, c.isKA, idx)}</div>`;
+  });
+
+  document.getElementById('modalBody').innerHTML =
+    (c.memberships.length > 1 ? `<div class="mem-tabs">${tabsHTML}</div>` : '') + panelsHTML;
+
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('detailOverlay'))
+    document.getElementById('detailOverlay').classList.remove('open');
+}
+
+function updateMissingData(idx, field, value) {
+  if (!window._modalCompany) return;
+  window._modalCompany.memberships[idx][field] = value;
+  // Recompute offers
+  const m = window._modalCompany.memberships[idx];
+  m.tier = detectTier(m);
+  m.promo = isPromo(m);
+  m.gp = isGoodPaymaster(m);
+  m.offers = computeOffers(m, m.tier, m.gp);
+  m.worqPts = computeWorqPoints(m, m.tier, window._modalCompany.isKA);
+  // Re-render this panel
+  document.getElementById(`memPanel-${idx}`).innerHTML = renderMembership(m, window._modalCompany.isKA, idx);
+}
+
+// ─── PDF EXTRACTION ───────────────────────────────────────────────────────────
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+async function handlePdfUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  showLoader('Extracting data from PDF...');
+  try {
+    const ab = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map(it => it.str).join(' ') + '\n';
+    }
+    const extracted = extractFromPdfText(text);
+    displayPdfResult(extracted);
+  } catch(e) {
+    document.getElementById('pdfResult').innerHTML = `<div class="notice warn">⚠️ Could not parse PDF: ${e.message}. Ensure the PDF contains selectable text (not scanned image).</div>`;
+    document.getElementById('pdfResult').style.display = 'block';
+  }
+  hideLoader();
+}
+
+function extractFromPdfText(text) {
+  const result = {};
+  // Company name
+  const coMatch = text.match(/(?:company|tenant|client)[\s\S]{0,50}?:\s*([A-Z][A-Za-z\s&.()Sdn Bhd]+)/i);
+  if (coMatch) result.companyName = coMatch[1].trim();
+  // Monthly rate
+  const rateMatch = text.match(/(?:monthly fee|monthly rate|rental)[^\d]*RM\s*([\d,]+(?:\.\d{2})?)/i);
+  if (rateMatch) result.monthlyRateExSST = parseFloat(rateMatch[1].replace(/,/g,''));
+  // Free months
+  const fmMatch = text.match(/(\d+(?:\.\d+)?)\s*(?:month|week)s?\s*(?:free|complimentary|waived|rent[\s-]free)/i);
+  if (fmMatch) {
+    const n = parseFloat(fmMatch[1]);
+    const isWeek = fmMatch[0].toLowerCase().includes('week');
+    result.freeMonthsCurrent = isWeek ? n/4 : n;
+  }
+  // Duration
+  const durMatch = text.match(/(?:term|duration|period)[^\d]*(\d+)\s*months?/i);
+  if (durMatch) result.contractDurationMonths = parseInt(durMatch[1]);
+  // Pax
+  const paxMatch = text.match(/(\d+)\s*(?:pax|persons?|people|headcount)/i);
+  if (paxMatch) result.pax = parseInt(paxMatch[1]);
+  // Room type
+  if (/window\s*office|window\s*room|window\s*unit/i.test(text)) result.roomType = 'Window';
+  else if (/non.?window|internal\s*office/i.test(text)) result.roomType = 'Non-Window';
+  // Dates
+  const dateMatches = text.match(/\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4}/g);
+  if (dateMatches && dateMatches.length >= 2) {
+    result.startDate = dateMatches[0].replace(/[-\.]/g,'/');
+    result.endDate = dateMatches[dateMatches.length-1].replace(/[-\.]/g,'/');
+  }
+  // Outlet
+  const outletKeys = Object.entries(OUTLET_NAMES);
+  for (const [code, name] of outletKeys) {
+    if (new RegExp(name, 'i').test(text)) { result.outletCode = code; break; }
+  }
+  return result;
+}
+
+function displayPdfResult(extracted) {
+  const el = document.getElementById('pdfResult');
+  const fields = Object.entries(extracted);
+  if (fields.length === 0) {
+    el.innerHTML = `<div class="notice warn">⚠️ No structured data could be extracted. Try entering details manually.</div>`;
+  } else {
+    const rows = fields.map(([k,v]) => `<tr><td style="padding:6px 12px;font-size:13px;color:var(--g500)">${k}</td><td style="padding:6px 12px;font-size:13px;font-weight:600">${v}</td></tr>`).join('');
+    el.innerHTML = `<div class="notice info">✓ Extracted ${fields.length} field${fields.length>1?'s':''} from PDF.</div>
+      <table style="width:100%;border-collapse:collapse;border:1px solid var(--g200);border-radius:6px;overflow:hidden;margin-top:8px">
+        <thead><tr style="background:var(--g50)"><th style="padding:8px 12px;text-align:left;font-size:12px;color:var(--g500)">Field</th><th style="padding:8px 12px;text-align:left;font-size:12px;color:var(--g500)">Extracted Value</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p style="font-size:12px;color:var(--g500);margin-top:8px">Review extracted values above. These can be used to fill in missing data when opening a client renewal.</p>`;
+  }
+  el.style.display = 'block';
+}
+
+// ─── SETTINGS INIT ────────────────────────────────────────────────────────────
+function populateOccupancyGrid() {
+  const grid = document.getElementById('occInputGrid');
+  if (!grid) return;
+  const codes = Object.keys(OUTLET_NAMES).filter(c => c !== 'STO');
+  grid.innerHTML = codes.map(code => `
+    <div class="fg" style="margin-bottom:0">
+      <label style="font-size:12px">${OUTLET_NAMES[code]} <span style="font-weight:400;color:var(--g500)">(${code})</span></label>
+      <div style="display:flex;align-items:center;gap:6px">
+        <input type="number" id="occ_${code}" min="0" max="100" step="1"
+          value="${OUTLET_OCCUPANCY[code] !== undefined ? OUTLET_OCCUPANCY[code] : ''}"
+          placeholder="—" style="width:80px;padding:7px 10px;border:1px solid var(--g300);border-radius:6px;font-size:14px;font-weight:600;text-align:right">
+        <span style="font-size:13px;color:var(--g500)">%</span>
+      </div>
+    </div>`).join('');
+}
+
+function clearOccupancy() {
+  OUTLET_OCCUPANCY = {};
+  localStorage.removeItem('outletOccupancy');
+  populateOccupancyGrid();
+  renderDashboard();
+}
+
+function populateRateTable() {
+  const tbody = document.getElementById('rateTable');
+  tbody.innerHTML = Object.entries(RETAIL_RATES).map(([code, rate]) =>
+    `<tr style="border-bottom:1px solid var(--g100)">
+      <td style="padding:8px 12px">${OUTLET_NAMES[code]}</td>
+      <td style="padding:8px 12px;color:var(--g500)">${code}</td>
+      <td style="padding:8px 12px;text-align:right;font-weight:600">${formatRM(rate)}</td>
+    </tr>`
+  ).join('');
+}
+
+// ─── TAB SWITCHING ────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'settings') populateOccupancyGrid();
+}
+
+// ─── LOADER ───────────────────────────────────────────────────────────────────
+function showLoader(msg) {
+  document.getElementById('loaderTxt').textContent = msg || 'Loading...';
+  document.getElementById('loader').classList.add('show');
+}
+function hideLoader() { document.getElementById('loader').classList.remove('show'); }
+
+// ─── UTILITY ──────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1b1m3j9zpkzWAGBZW-se-cz-Op--ZSSY5-M8-PQVcM5Y/edit?gid=474435602#gid=474435602';
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadOccupancySaved();
+  populateRateTable();
+  populateOccupancyGrid();
+  const saved = localStorage.getItem('csvUrl') || DEFAULT_SHEET_URL;
+  const inputEl = document.getElementById('sheetUrlInput');
+  if (inputEl) inputEl.value = saved;
+  if (saved) {
+    localStorage.setItem('csvUrl', saved);
+    reloadData();
+  } else {
+    loadSampleData();
+  }
+});
+</script>
+</body>
+</html>
